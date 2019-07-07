@@ -1,0 +1,135 @@
+{
+	"variables": [],
+	"info": {
+		"name": "tragedy of the co2mmons",
+		"_postman_id": "541aed45-3dc0-8075-c454-70c9e3aece14",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Signup",
+			"request": {
+				"url": "localhost:5000/api/signup",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"Alberto\",\n\t\"avatar\": \"http://etrio.in/wp-content/uploads/2019/03/VRDE.png\",\n\t\"pushToken\": \"12345\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Status",
+			"request": {
+				"url": "localhost:5000/api/status",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYzNDU0M2I4ZjljYjQ0MTViNDA4YjQxZDJjNTdkNDYxIn0.lYXAPog4Nd2teCY4luTplLCPqNvdz9Nuwg7BFBo5yMs",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Trade",
+			"request": {
+				"url": {
+					"raw": "localhost:5000/api/trade?to=41c1b1c380b8467d8a0c52a04fdae012",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"trade"
+					],
+					"query": [
+						{
+							"key": "to",
+							"value": "41c1b1c380b8467d8a0c52a04fdae012",
+							"equals": true,
+							"description": ""
+						}
+					],
+					"variable": []
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYzNDU0M2I4ZjljYjQ0MTViNDA4YjQxZDJjNTdkNDYxIn0.EbKVCAoiqW1rJTfS8Kw4qXA6IJjPZHVKDMfPHH-bNpI",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Reset counters",
+			"request": {
+				"url": "http://localhost:5000/api/private/reset",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Bananas",
+						"value": "Schoko",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Confirm trade",
+			"request": {
+				"url": "http://localhost:5000/api/confirm/ba314d93dfa145eba4faad23ac39bc84",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjQxYzFiMWMzODBiODQ2N2Q4YTBjNTJhMDRmZGFlMDEyIn0.E0rso3Jeq4_Jl7tLNms4wsPlKqX6heMZW3QeKS47aYY",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Plant trees",
+			"request": {
+				"url": "http://localhost:5000/api/plant/2",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjQxYzFiMWMzODBiODQ2N2Q4YTBjNTJhMDRmZGFlMDEyIn0.E0rso3Jeq4_Jl7tLNms4wsPlKqX6heMZW3QeKS47aYY",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

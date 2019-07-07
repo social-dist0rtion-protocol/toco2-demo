@@ -1,25 +1,65 @@
 import React, { useState, useEffect } from "react";
 import { AsyncStorage, Text, View, StyleSheet } from "react-native";
+import Signup from "../components/Signup";
+import { setJwt } from "../api";
+import Status from "../components/Status";
+import Actions from "../components/Actions";
+import { material } from "react-native-typography";
 
 const HomeScreen = ({ navigation }) => {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [id, setId] = useState("");
+  const [name, setName] = useState("");
 
   useEffect(() => {
-    AsyncStorage.getItem("jwt")
-      .then(value => setLoggedIn(value == "true"))
+    AsyncStorage.multiGet(["jwt", "id", "name"])
+      .then(values => {
+        values.forEach(keyValue => {
+          const [key, value] = keyValue;
+          if (value) {
+            switch (key) {
+              case "jwt":
+                setLoggedIn(true);
+                setJwt(value);
+                break;
+              case "id":
+                setId(value);
+                break;
+              case "name":
+                setName(value);
+            }
+          }
+        });
+      })
       .catch(_ => setLoggedIn(false));
   }, []);
 
+  const onLoginSuccess = (jwt: string, id: string, name: string) => {
+    setName(name);
+    setId(id);
+    AsyncStorage.multiSet([["jwt", jwt], ["id", id], ["name", name]]);
+    setLoggedIn(true);
+  };
+
   return (
     <View style={styles.Wrapper}>
-      <Text>{loggedIn ? "Welcome back!" : "Sign up!"}</Text>
+      {loggedIn ? (
+        <View>
+          <Status id={id} name={name} />
+          <Actions navigation={navigation} />
+        </View>
+      ) : (
+        <Signup onLoginSuccess={onLoginSuccess} />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   Wrapper: {
-    flex: 1
+    flex: 1,
+    backgroundColor: "#01796f",
+    alignItems: "center"
   }
 });
 

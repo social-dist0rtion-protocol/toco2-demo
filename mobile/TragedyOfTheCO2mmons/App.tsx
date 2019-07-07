@@ -1,11 +1,13 @@
 import { createStackNavigator, createAppContainer } from "react-navigation";
 import HomeScreen from "./screens/Home";
-import SignupScreen from "./screens/Signup";
+import PlantScreen from "./screens/Plant";
+import TradeScreen from "./screens/Trade";
 
 const AppNavigator = createStackNavigator(
   {
     Home: { screen: HomeScreen },
-    Signup: { screen: SignupScreen }
+    Plant: { screen: PlantScreen },
+    Trade: { screen: TradeScreen }
   },
   { initialRouteName: "Home" }
 );

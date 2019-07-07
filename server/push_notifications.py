@@ -5,7 +5,7 @@ from exponent_server_sdk import DeviceNotRegisteredError, PushClient, \
 from requests.exceptions import ConnectionError, HTTPError
 
 
-log_instead_of_pushing = True
+log_instead_of_pushing = False
 
 
 def push(token, title, msg):

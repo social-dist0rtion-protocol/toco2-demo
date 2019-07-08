@@ -40,9 +40,20 @@ initial_pts_per_tree = 1
 # =========================================================================== #
 
 
-def error(msg, status):
-    response = jsonify({'status': status, 'error': msg})
-    response.status_code = status
+class APIError(Exception):
+    status_code = 500
+
+    def __init__(self, message, status_code=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+
+
+@app.errorhandler(APIError)
+def handle_invalid_usage(error):
+    response = jsonify({'status': error.status_code, 'error': error.message})
+    response.status_code = error.status_code
     return response
 
 
@@ -65,24 +76,24 @@ def write_jwt(client_id):
 def get_client_id():
     auth = request.headers.get('Authorization', None)
     if not auth or not auth.startswith('Bearer '):
-        abort(401)
+        raise APIError('Missing Authorization header', 401)
     raw_jwt = auth.split()[1]
     try:
         decoded = jwt.decode(raw_jwt, jwt_secret, algorithms=['HS256'])
         id = decoded.get('id', None)
         if not id:
-            abort(401)
+            raise APIError('Invalid Authorization header', 401)
         return id
     except:
         print('invalid jwt: {}'.format(raw_jwt))
-        return error('Invalid JWT', 401)
+        raise APIError('Invalid JWT', 401)
 
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
     j = request.get_json()
     if not j or any([x not in j for x in player_required_fields]):
-        return error('Request does not contain all required fields', 400)
+        raise APIError('Request does not contain all required fields', 400)
 
     token_key = 'token:{}'.format(j['pushToken'])
     created = False
@@ -109,12 +120,12 @@ def trade():
     player_from = r.hgetall('player:{}'.format(sender))
     recipient_token = r.hget('player:{}'.format(recipient), 'pushToken')
     if not player_from or not recipient_token:
-        return error('unknown sender or recipient', 422)
+        raise APIError('unknown sender or recipient', 422)
 
     if r.exists('cooldown:{}:{}'.format(sender, recipient)) \
             or r.exists('cooldown:{}:{}'.format(recipient, sender)):
-        return error('In cooldown period with player {}'.format(recipient),
-                     429)
+        raise APIError('In cooldown period with player {}'.format(recipient),
+                       429)
 
     tx_id = uuid.uuid4().hex
     r.hmset('tx:{}'.format(tx_id),
@@ -134,14 +145,14 @@ def confirm(transaction_id):
     print(tx_key)
     tx = r.hmget(tx_key, 'from', 'to', 'executed')
     if not tx:
-        return error('Unknown transaction', 422)
+        raise APIError('Unknown transaction', 422)
 
     p1, p2, executed = tx
     print('p1: {}, p2: {}, exe: {}'.format(p1, p2, executed))
     if p2 != get_client_id() or executed == 1:
-        return error('Transaction already executed' if executed == 1
-                     else 'Only {} can confirm this transaction'.format(p2),
-                     403)
+        raise APIError('Transaction already executed' if executed == 1
+                       else 'Only {} can confirm this transaction'.format(p2),
+                       403)
 
     pts = int(r.get('pts:tick'))
     co2 = int(r.get('co2:tick'))
@@ -178,8 +189,8 @@ def plant_tree(quantity):
           .format(client, quantity, points_needed, balance))
 
     if balance < points_needed:
-        return error('{} points needed, balance is {}'
-                     .format(points_needed, balance), 403)
+        raise APIError('{} points needed, balance is {}'
+                       .format(points_needed, balance), 403)
     new_balance = int(r.hincrby(player_key, 'balance', -points_needed))
     new_co2 = int(r.incrby('co2', -co2_per_tree * quantity))
     return jsonify({

@@ -1,0 +1,125 @@
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Text, Image, FlatList } from "react-native";
+import { TouchableNativeFeedback } from "react-native-gesture-handler";
+import { Player } from "../screens/Trade";
+import { material } from "react-native-typography";
+import { getPendingTransactions, confirmTx } from "../api";
+
+type Transaction = {
+  id: string;
+  from: Player;
+};
+
+const EmptyList = () => (
+  <View style={styles.Empty}>
+    <Text>No pending transactions at the moment 🧐</Text>
+  </View>
+);
+
+export const ConfirmScreen = () => {
+  const [pending, setPending] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (refreshing) {
+      getPendingTransactions().then(pendingDict => {
+        setPending(
+          Object.entries<Transaction>(pendingDict.pending).map(([id, tx]) => ({
+            id,
+            from: tx.from
+          }))
+        );
+        setRefreshing(false);
+      });
+    } else {
+      setRefreshing(false);
+    }
+  }, [refreshing]);
+
+  useEffect(() => {
+    // load list of transactions on mount
+    setRefreshing(true);
+  }, []);
+
+  const doRefresh = () => setRefreshing(true);
+
+  const keyExtractor = (item: Transaction) => item.id;
+
+  const doConfirm = (txId: string, name: string) => async () => {
+    try {
+      const response = await confirmTx(txId);
+      if (response.success) {
+        alert(`Yay! 🔥 ${JSON.stringify(response)}`);
+        doRefresh();
+      } else {
+        alert(`Couldn't confirm tx ${txId} with ${name}: ${response.error} ☹️`);
+      }
+    } catch (error) {
+      alert(`Something went wrong: ${error} 😟`);
+    }
+  };
+
+  const renderPending = ({ item }: { item: Transaction }) => (
+    <View style={styles.Transaction} key={item.id}>
+      <Image style={styles.Image} source={{ uri: item.from.avatar }} />
+      <View style={styles.TouchableWrapper}>
+        <TouchableNativeFeedback
+          style={styles.Touchable}
+          onPress={doConfirm(item.id, item.from.name)}
+        >
+          <View>
+            <Text style={styles.TransactionId}>{item.id}</Text>
+            <Text style={styles.Name}>{item.from.name}</Text>
+          </View>
+        </TouchableNativeFeedback>
+      </View>
+    </View>
+  );
+
+  return (
+    <FlatList
+      data={pending}
+      keyExtractor={keyExtractor}
+      renderItem={renderPending}
+      refreshing={refreshing}
+      onRefresh={doRefresh}
+      ListEmptyComponent={EmptyList}
+    />
+  );
+};
+
+const styles = StyleSheet.create({
+  Empty: {
+    margin: 16
+  },
+  Transaction: {
+    flexDirection: "row",
+    flex: 1,
+    alignItems: "center"
+  },
+  Image: {
+    width: 60,
+    height: 60,
+    resizeMode: "cover"
+  },
+  Touchable: {
+    height: 60,
+    justifyContent: "center",
+    paddingLeft: 12
+  },
+  TouchableWrapper: {
+    flex: 1
+  },
+  TransactionId: {
+    ...material.body2Object
+  },
+  Name: {
+    ...material.body1Object
+  }
+});
+
+ConfirmScreen.navigationOptions = () => ({
+  title: "Pending transactions"
+});
+
+export default ConfirmScreen;

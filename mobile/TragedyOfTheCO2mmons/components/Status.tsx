@@ -2,32 +2,41 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { material, systemWeights } from "react-native-typography";
 import { getStatus } from "../api";
+import { NavigationScreenProps } from "react-navigation";
+import { TouchableNativeFeedback } from "react-native-gesture-handler";
+import { Button, ButtonText } from "../styles";
 
 type StatusProps = {
   id: string;
   name: string;
   avatar: string;
+  navigation: NavigationScreenProps["navigation"];
 };
 
 const Status = (props: StatusProps) => {
   const [balance, setBalance] = useState(0);
   const [CO2, setCO2] = useState(0);
   const [globalCO2, setGlobalCO2] = useState(0);
+  const [pending, setPending] = useState([]);
+  const [refreshStatus, setRefreshStatus] = useState(false);
 
   useEffect(() => {
     getStatus().then(response => {
       setBalance(response.balance);
       setCO2(response.co2);
       setGlobalCO2(response.globalCO2);
+      setPending(response.pending);
     });
-  }, []);
+  }, [refreshStatus]);
+
+  props.navigation.addListener("didFocus", _ => setRefreshStatus(true));
 
   return (
     <View style={styles.Wrapper}>
       <Text style={styles.Welcome}>Welcome back, {props.name}!</Text>
       <View style={styles.Info}>
         <Image style={styles.Image} source={{ uri: props.avatar }} />
-        <Text>
+        <Text style={styles.Id}>
           Your id:{"\n"}
           {props.id}
         </Text>
@@ -42,6 +51,19 @@ const Status = (props: StatusProps) => {
         <Text style={styles.StatusText}>
           Current CO₂ levels:<Text style={styles.Bold}> {globalCO2} </Text>ppm
         </Text>
+        {pending.length ? (
+          <View style={styles.ButtonWrapper}>
+            <TouchableNativeFeedback
+              onPress={() => props.navigation.navigate("Confirm")}
+            >
+              <View style={styles.Button}>
+                <Text style={styles.ButtonText}>
+                  {pending.length} pending tx
+                </Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -64,6 +86,14 @@ const styles = StyleSheet.create({
   Bold: {
     ...systemWeights.bold
   },
+  ButtonWrapper: {
+    alignItems: "center"
+  },
+  Button: {
+    ...Button,
+    backgroundColor: "#f9812a",
+    marginTop: 12
+  },
   Info: {
     flexDirection: "row",
     marginTop: 12
@@ -73,7 +103,12 @@ const styles = StyleSheet.create({
     height: 120,
     resizeMode: "cover",
     marginRight: 12
-  }
+  },
+  Id: {
+    flex: 1,
+    flexWrap: "wrap"
+  },
+  ButtonText
 });
 
 export default React.memo(Status);

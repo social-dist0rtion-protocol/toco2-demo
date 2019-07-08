@@ -21,6 +21,9 @@ def push(token, title, msg):
     except (ConnectionError, HTTPError) as e:
         print('got a connection error while sending "{}" to {}'
               .format(msg, token))
+    except ValueError as e:
+        print('Invalid push token, notifications will not work. Whatevz.')
+        return
 
     try:
         response.validate_response()

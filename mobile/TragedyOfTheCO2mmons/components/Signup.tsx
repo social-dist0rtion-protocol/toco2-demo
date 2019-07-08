@@ -1,17 +1,12 @@
 import { Notifications } from "expo";
 import * as Permissions from "expo-permissions";
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  TextInput,
-  ActivityIndicator
-} from "react-native";
+import { View, StyleSheet, Text, TextInput } from "react-native";
 import { material, materialColors } from "react-native-typography";
 import { server, login, getRandomAvatar } from "../api";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
-import { Button, ButtonText, TextInputStyle, Label, Overlay } from "../styles";
+import { Button, ButtonText, TextInputStyle, Label } from "../styles";
+import Overlay from "./Overlay";
 
 type SignupProps = {
   onLoginSuccess: (
@@ -109,11 +104,7 @@ const Signup = (props: SignupProps) => {
           </TouchableNativeFeedback>
         </View>
       </View>
-      {loading && (
-        <View style={styles.Overlay}>
-          <ActivityIndicator size="large" color="white" />
-        </View>
-      )}
+      <Overlay show={loading} />
     </View>
   );
 };
@@ -137,7 +128,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: "center"
   },
-  Overlay,
   Label,
   Button,
   ButtonText,

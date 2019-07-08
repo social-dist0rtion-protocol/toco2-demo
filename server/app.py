@@ -3,6 +3,7 @@
 from flask import Flask, request, jsonify, abort
 from flask_redis import FlaskRedis
 from push_notifications import push
+from collections import OrderedDict
 import json
 import jwt
 import os
@@ -24,6 +25,7 @@ app = Flask(__name__, static_folder=webapp_folder)
 app.config['REDIS_URL'] = REDIS_URL
 app.config['SECRET_KEY'] = "co2 it's easy as 1-2-2"
 app.config['JSON_AS_ASCII'] = False
+app.config['TRAP_HTTP_EXCEPTIONS'] = True
 
 r = FlaskRedis(app, decode_responses=True)
 # =========================================================================== #
@@ -38,6 +40,7 @@ initial_co2 = 0
 initial_pts_per_trade = 10
 initial_co2_per_trade = 10
 initial_pts_per_tree = 1
+initial_player_balance = 20
 # =========================================================================== #
 
 
@@ -52,10 +55,17 @@ class APIError(Exception):
 
 
 @app.errorhandler(APIError)
-def handle_invalid_usage(error):
+def handle_error(error):
+    if not isinstance(error, APIError):
+        response = jsonify({'status': 500, 'error': str(error)})
+        response.status_code = 500
+        return response
     response = jsonify({'status': error.status_code, 'error': error.message})
     response.status_code = error.status_code
     return response
+
+
+app.register_error_handler(Exception, handle_error)
 
 
 def reset_game():
@@ -104,7 +114,7 @@ def signup():
         client_id = uuid.uuid4().hex
         j['id'] = client_id
         j['co2'] = 0
-        j['balance'] = 0
+        j['balance'] = initial_player_balance
         r.hmset('player:{}'.format(client_id), j)
         r.set(token_key, client_id)
         r.hset('players',
@@ -131,9 +141,15 @@ def trade():
         raise APIError('In cooldown period with player {}'.format(recipient),
                        429)
 
+    r.setex('cooldown:{}:{}'.format(sender, recipient),
+            cooldown_secs,
+            int(time.time()))
+
     tx_id = uuid.uuid4().hex
     r.hmset('tx:{}'.format(tx_id),
             {'from': player_from['id'], 'to': recipient})
+
+    r.hmset('player:{}:pending'.format(recipient), {tx_id: int(time.time())})
 
     push(recipient_token,
          'Confirm trade transaction',
@@ -152,7 +168,7 @@ def confirm(transaction_id):
         raise APIError('Unknown transaction', 422)
 
     p1, p2, executed = tx
-    print('p1: {}, p2: {}, exe: {}'.format(p1, p2, executed))
+    print('p1: {}, p2: {}, exec: {}'.format(p1, p2, executed))
     if p2 != get_client_id() or executed == 1:
         raise APIError('Transaction already executed' if executed == 1
                        else 'Only {} can confirm this transaction'.format(p2),
@@ -167,8 +183,8 @@ def confirm(transaction_id):
         r.hincrby(k, 'co2', co2)
 
     r.incrby('co2', 2 * pts)
-    r.setex('cooldown:{}:{}'.format(p1, p2), int(time.time()), cooldown_secs)
     r.hset(tx_key, 'executed', 1)
+    r.hdel('player:{}:pending'.format(p2), transaction_id)
 
     p1_token = r.hget('player:{}'.format(p1), 'pushToken')
     if not p1_token:
@@ -206,10 +222,43 @@ def plant_tree(quantity):
 def get_status():
     client = get_client_id()
     balance, co2 = r.hmget('player:{}'.format(client), 'balance', 'co2')
+    if not balance or not co2:
+        raise APIError('unknown client', 403)
     global_co2 = r.get('co2')
+    pending = r.hkeys('player:{}:pending'.format(client))
     return jsonify({
-        'balance': int(balance), 'co2': int(co2), 'globalCO2': int(global_co2)
+        'balance': int(balance), 'co2': int(co2), 'globalCO2': int(global_co2),
+        'pending': pending
         })
+
+
+@app.route('/api/players', methods=['GET'])
+def list_players():
+    players = r.hgetall('players')
+    decoded = {k: json.loads(v) for k, v in players.items()}
+    return jsonify(decoded)
+
+
+@app.route('/api/pending', methods=['GET'])
+def list_pending():
+    client = get_client_id()
+    transactions = []
+    pending = r.hgetall('player:{}:pending'.format(client))
+    if pending:
+        pipe = r.pipeline()
+        for tx in pending.keys():
+            pipe.hget('tx:{}'.format(tx), 'from')
+        senders = pipe.execute()
+        pipe = r.pipeline()
+        for sender in senders:
+            pipe.hmget('player:{}'.format(sender), 'id', 'name', 'avatar')
+        senders = pipe.execute()
+        transactions = {
+                tx: {'from': {'id': s[0], 'name': s[1], 'avatar': s[2]}}
+                for s, tx in zip(senders, pending.keys())}
+        transactions = OrderedDict(sorted(transactions.items(),
+                                   key=lambda x: pending[x[0]]))
+    return jsonify({'pending': transactions})
 
 
 @app.route('/api/private/reset', methods=['POST'])

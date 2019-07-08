@@ -4,6 +4,7 @@ import { NavigationScreenProps } from "react-navigation";
 import { Button, ButtonText } from "../styles";
 
 type ActionsProps = {
+  id: string;
   navigation: NavigationScreenProps["navigation"];
 };
 
@@ -13,7 +14,7 @@ export const Actions = (props: ActionsProps) => {
       <View style={styles.Buttons}>
         <View style={styles.ButtonWrapper}>
           <TouchableNativeFeedback
-            onPress={() => props.navigation.navigate("Trade")}
+            onPress={() => props.navigation.navigate("Trade", { id: props.id })}
           >
             <View style={styles.Button}>
               <Text style={styles.ButtonText}>TRADE</Text>

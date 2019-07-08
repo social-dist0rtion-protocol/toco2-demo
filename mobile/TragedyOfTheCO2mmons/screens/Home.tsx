@@ -4,9 +4,14 @@ import Signup from "../components/Signup";
 import { setJwt } from "../api";
 import Status from "../components/Status";
 import Actions from "../components/Actions";
-import { Overlay } from "../styles";
+import Overlay from "../components/Overlay";
+import { NavigationScreenProp } from "react-navigation";
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({
+  navigation
+}: {
+  navigation: NavigationScreenProp<any>;
+}) => {
   const [ready, setReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [id, setId] = useState("");
@@ -63,20 +68,14 @@ const HomeScreen = ({ navigation }) => {
     setLoggedIn(true);
   };
 
-  if (!ready) {
-    return (
-      <View style={styles.Wrapper}>
-        <View style={styles.Overlay} />
-      </View>
-    );
-  }
+  if (!ready) return <Overlay show={true} />;
 
   return (
     <View style={styles.Wrapper}>
       {loggedIn ? (
         <View>
-          <Status id={id} name={name} avatar={avatar} />
-          <Actions navigation={navigation} />
+          <Status id={id} name={name} avatar={avatar} navigation={navigation} />
+          <Actions id={id} navigation={navigation} />
         </View>
       ) : (
         <Signup onLoginSuccess={onLoginSuccess} />
@@ -90,8 +89,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#01796f",
     alignItems: "center"
-  },
-  Overlay
+  }
 });
 
 HomeScreen.navigationOptions = ({ navigation }) => ({

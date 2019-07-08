@@ -47,8 +47,19 @@ export const login = async (pushToken: string, name: string, avatar: string) =>
 
 export const getStatus = async () => fetchJson(() => get("/api/status", true));
 
+export const getRandomAvatar = async () =>
+  fetchJson(() => get("https://dog.ceo/api/breeds/image/random", false, true));
+
+export const getPlayerList = async () => fetchJson(() => get("/api/players"));
+
 export const trade = async (to: string) =>
   fetchJson(() => post(`/api/trade?to=${to}`, {}, true));
 
-export const getRandomAvatar = async () =>
-  fetchJson(() => get("https://dog.ceo/api/breeds/image/random", false, true));
+export const confirmTx = async (txId: string) =>
+  fetchJson(() => post(`/api/confirm/${txId}`, {}, true));
+
+export const plantTrees = async (quantity: number) =>
+  fetchJson(() => post(`/api/plant/${quantity}`, {}, true));
+
+export const getPendingTransactions = async () =>
+  fetchJson(() => get("/api/pending", true));

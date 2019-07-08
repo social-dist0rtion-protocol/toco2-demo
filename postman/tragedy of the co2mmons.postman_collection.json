@@ -130,6 +130,34 @@
 				"description": ""
 			},
 			"response": []
+		},
+		{
+			"name": "Player list",
+			"request": {
+				"url": "http://localhost:5000/api/players",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Pending list",
+			"request": {
+				"url": "http://localhost:5000/api/pending",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjNjODcxMTU1NDE3NjRiYzc5ODFhZmU5MDZiZjhmMDYzIn0.3s1LMvKD9z_8UTD382Q6lDf3xlC7-58HaW2ViejNYeg",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
 		}
 	]
 }

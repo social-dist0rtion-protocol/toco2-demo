@@ -64,7 +64,7 @@ const Signup = (props: SignupProps) => {
       alert(
         `Couldn't get a token, push notifications will be disabled.\n${error}`
       );
-      token = "fake-token";
+      token = `fake-token-${Date.now()}`;
     }
 
     const response = await login(token, name, "placeholder");

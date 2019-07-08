@@ -3,6 +3,7 @@
 from flask import Flask, request, jsonify, abort
 from flask_redis import FlaskRedis
 from push_notifications import push
+import json
 import jwt
 import os
 import time
@@ -106,6 +107,9 @@ def signup():
         j['balance'] = 0
         r.hmset('player:{}'.format(client_id), j)
         r.set(token_key, client_id)
+        r.hset('players',
+               client_id,
+               json.dumps({x: j[x] for x in ['name', 'avatar']}))
         created = True
 
     return jsonify({

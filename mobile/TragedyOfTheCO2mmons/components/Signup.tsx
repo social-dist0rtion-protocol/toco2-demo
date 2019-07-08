@@ -1,6 +1,6 @@
 import { Notifications } from "expo";
 import * as Permissions from "expo-permissions";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -9,18 +9,28 @@ import {
   ActivityIndicator
 } from "react-native";
 import { material, materialColors } from "react-native-typography";
-import { server, login } from "../api";
+import { server, login, getRandomAvatar } from "../api";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
-import { Button, ButtonText, TextInputStyle, Label } from "../styles";
+import { Button, ButtonText, TextInputStyle, Label, Overlay } from "../styles";
 
 type SignupProps = {
-  onLoginSuccess: (jwt: string, id: string, name: string) => void;
+  onLoginSuccess: (
+    jwt: string,
+    id: string,
+    name: string,
+    avatar: string
+  ) => void;
 };
 
 const Signup = (props: SignupProps) => {
   const [name, setName] = useState("");
   const [backend, setBackend] = useState(server);
   const [loading, setLoading] = useState(false);
+  const [avatar, setAvatar] = useState("");
+
+  useEffect(() => {
+    getRandomAvatar().then(response => setAvatar(response.message));
+  }, []);
 
   const onLoginPress = async () => {
     if (!name.trim().length) return;
@@ -67,9 +77,9 @@ const Signup = (props: SignupProps) => {
       token = `fake-token-${Date.now()}`;
     }
 
-    const response = await login(token, name, "placeholder");
+    const response = await login(token, name, avatar);
     setLoading(false);
-    props.onLoginSuccess(response.auth, response.id, name);
+    props.onLoginSuccess(response.auth, response.id, name, avatar);
   };
 
   return (
@@ -127,15 +137,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: "center"
   },
-  Overlay: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    paddingTop: 250,
-    backgroundColor: "rgba(0, 0, 0, 0.8)"
-  },
+  Overlay,
   Label,
   Button,
   ButtonText,

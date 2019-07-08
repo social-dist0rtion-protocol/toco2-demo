@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { material, systemWeights } from "react-native-typography";
 import { getStatus } from "../api";
 
 type StatusProps = {
   id: string;
   name: string;
+  avatar: string;
 };
 
 const Status = (props: StatusProps) => {
@@ -24,7 +25,13 @@ const Status = (props: StatusProps) => {
   return (
     <View style={styles.Wrapper}>
       <Text style={styles.Welcome}>Welcome back, {props.name}!</Text>
-      <Text>Your id: {props.id}</Text>
+      <View style={styles.Info}>
+        <Image style={styles.Image} source={{ uri: props.avatar }} />
+        <Text>
+          Your id:{"\n"}
+          {props.id}
+        </Text>
+      </View>
       <View style={styles.Status}>
         <Text style={styles.StatusText}>
           Your balance:<Text style={styles.Bold}> {balance} </Text>whatevzDAI
@@ -48,13 +55,24 @@ const styles = StyleSheet.create({
     ...material.headlineWhiteObject
   },
   Status: {
-    marginTop: 30
+    marginTop: 30,
+    alignItems: "center"
   },
   StatusText: {
     ...material.subheadingWhiteObject
   },
   Bold: {
     ...systemWeights.bold
+  },
+  Info: {
+    flexDirection: "row",
+    marginTop: 12
+  },
+  Image: {
+    width: 120,
+    height: 120,
+    resizeMode: "cover",
+    marginRight: 12
   }
 });
 

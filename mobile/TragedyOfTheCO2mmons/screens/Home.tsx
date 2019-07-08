@@ -4,14 +4,17 @@ import Signup from "../components/Signup";
 import { setJwt } from "../api";
 import Status from "../components/Status";
 import Actions from "../components/Actions";
+import { Overlay } from "../styles";
 
 const HomeScreen = ({ navigation }) => {
+  const [ready, setReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [id, setId] = useState("");
   const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
-    AsyncStorage.multiGet(["jwt", "id", "name"])
+    AsyncStorage.multiGet(["jwt", "id", "name", "avatar"])
       .then(values => {
         values.forEach(keyValue => {
           const [key, value] = keyValue;
@@ -26,26 +29,53 @@ const HomeScreen = ({ navigation }) => {
                 break;
               case "name":
                 setName(value);
+                break;
+              case "avatar":
+                setAvatar(value);
+                break;
             }
           }
         });
+        setReady(true);
       })
-      .catch(_ => setLoggedIn(false));
+      .catch(_ => {
+        setLoggedIn(false);
+        setReady(true);
+      });
   }, []);
 
-  const onLoginSuccess = (jwt: string, id: string, name: string) => {
+  const onLoginSuccess = (
+    jwt: string,
+    id: string,
+    name: string,
+    avatar: string
+  ) => {
     setJwt(jwt);
     setName(name);
     setId(id);
-    AsyncStorage.multiSet([["jwt", jwt], ["id", id], ["name", name]]);
+    setAvatar(avatar);
+    AsyncStorage.multiSet([
+      ["jwt", jwt],
+      ["id", id],
+      ["name", name],
+      ["avatar", avatar]
+    ]);
     setLoggedIn(true);
   };
+
+  if (!ready) {
+    return (
+      <View style={styles.Wrapper}>
+        <View style={styles.Overlay} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.Wrapper}>
       {loggedIn ? (
         <View>
-          <Status id={id} name={name} />
+          <Status id={id} name={name} avatar={avatar} />
           <Actions navigation={navigation} />
         </View>
       ) : (
@@ -60,7 +90,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#01796f",
     alignItems: "center"
-  }
+  },
+  Overlay
 });
 
 HomeScreen.navigationOptions = ({ navigation }) => ({

@@ -11,11 +11,18 @@ const defaultHeaders = {
   "Content-Type": "application/json"
 };
 
-const get = (url: string, authenticated: boolean = false) => {
+const get = (
+  url: string,
+  authenticated: boolean = false,
+  externalServer: boolean = false
+) => {
   const headers = authenticated
     ? { ...defaultHeaders, Authorization: `Bearer ${auth}` }
     : defaultHeaders;
-  return fetch(`${server}${url}`, { method: "GET", headers });
+  return fetch(externalServer ? url : `${server}${url}`, {
+    method: "GET",
+    headers
+  });
 };
 
 const post = (url: string, body: any, authenticated: boolean = false) => {
@@ -42,3 +49,6 @@ export const getStatus = async () => fetchJson(() => get("/api/status", true));
 
 export const trade = async (to: string) =>
   fetchJson(() => post(`/api/trade?to=${to}`, {}, true));
+
+export const getRandomAvatar = async () =>
+  fetchJson(() => get("https://dog.ceo/api/breeds/image/random", false, true));

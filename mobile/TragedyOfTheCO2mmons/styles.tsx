@@ -6,7 +6,8 @@ export const Button = {
   width: 150,
   height: 40,
   justifyContent: "center",
-  alignItems: "center" as FlexAlignType
+  alignItems: "center" as FlexAlignType,
+  marginBottom: 16
 } as ViewStyle;
 
 export const ButtonText = {

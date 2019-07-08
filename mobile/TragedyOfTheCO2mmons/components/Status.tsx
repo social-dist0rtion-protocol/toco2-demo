@@ -42,14 +42,12 @@ const Status = (props: StatusProps) => {
 
 const styles = StyleSheet.create({
   Wrapper: {
-    flex: 1,
     marginTop: 30
   },
   Welcome: {
     ...material.headlineWhiteObject
   },
   Status: {
-    flex: 1,
     marginTop: 30
   },
   StatusText: {

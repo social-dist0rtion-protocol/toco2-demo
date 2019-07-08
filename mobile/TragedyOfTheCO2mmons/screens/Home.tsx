@@ -4,7 +4,6 @@ import Signup from "../components/Signup";
 import { setJwt } from "../api";
 import Status from "../components/Status";
 import Actions from "../components/Actions";
-import { material } from "react-native-typography";
 
 const HomeScreen = ({ navigation }) => {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -35,6 +34,7 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   const onLoginSuccess = (jwt: string, id: string, name: string) => {
+    setJwt(jwt);
     setName(name);
     setId(id);
     AsyncStorage.multiSet([["jwt", jwt], ["id", id], ["name", name]]);

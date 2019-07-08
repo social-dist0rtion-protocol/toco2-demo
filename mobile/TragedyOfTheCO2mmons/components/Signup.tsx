@@ -24,29 +24,48 @@ const Signup = (props: SignupProps) => {
 
   const onLoginPress = async () => {
     if (!name.trim().length) return;
+
+    let status: string;
     setLoading(true);
-    const { status: existingStatus } = await Permissions.getAsync(
-      Permissions.NOTIFICATIONS
-    );
-    let finalStatus = existingStatus;
+
+    try {
+      status = (await Permissions.getAsync(Permissions.NOTIFICATIONS)).status;
+    } catch (error) {
+      status = "unknown";
+    }
+
+    let finalStatus = status;
 
     // only ask if permissions have not already been determined, because
     // iOS won't necessarily prompt the user a second time.
-    if (existingStatus !== "granted") {
+    if (status !== "granted") {
       // Android remote notification permissions are granted during the app
       // install, so this will only ask on iOS
-      const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+      try {
+        status = (await Permissions.askAsync(Permissions.NOTIFICATIONS)).status;
+      } catch (error) {
+        alert(`Couldn't enable push notifications: ${error}`);
+        status = "error";
+      }
       finalStatus = status;
     }
 
-    // Stop here if the user did not grant permissions
+    // stop here if the user did not grant permissions
     if (finalStatus !== "granted") {
       setLoading(false);
       return;
     }
 
-    // Get the token that uniquely identifies this device
-    const token = await Notifications.getExpoPushTokenAsync();
+    // get the token that uniquely identifies this device
+    let token: string;
+    try {
+      token = await Notifications.getExpoPushTokenAsync();
+    } catch (error) {
+      alert(
+        `Couldn't get a token, push notifications will be disabled.\n${error}`
+      );
+      token = "fake-token";
+    }
 
     const response = await login(token, name, "placeholder");
     setLoading(false);
@@ -64,6 +83,7 @@ const Signup = (props: SignupProps) => {
           value={name}
           placeholder="Your public name"
           placeholderTextColor={materialColors.whiteTertiary}
+          onEndEditing={onLoginPress}
         />
         <Text style={styles.Label}>Server</Text>
         <TextInput

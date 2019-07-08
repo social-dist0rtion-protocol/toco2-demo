@@ -9,22 +9,22 @@ type ActionsProps = {
 
 export const Actions = (props: ActionsProps) => {
   return (
-    <View style={styles.Wrapper}>
+    <View>
       <View style={styles.Buttons}>
         <View style={styles.ButtonWrapper}>
           <TouchableNativeFeedback
-            style={styles.Button}
             onPress={() => props.navigation.navigate("Trade")}
           >
-            <Text style={styles.ButtonText}>TRADE</Text>
+            <View style={styles.Button}>
+              <Text style={styles.ButtonText}>TRADE</Text>
+            </View>
           </TouchableNativeFeedback>
-        </View>
-        <View style={styles.ButtonWrapper}>
           <TouchableNativeFeedback
-            style={styles.Button}
             onPress={() => props.navigation.navigate("Plant")}
           >
-            <Text style={styles.ButtonText}>PLANT TREES</Text>
+            <View style={styles.Button}>
+              <Text style={styles.ButtonText}>PLANT TREES</Text>
+            </View>
           </TouchableNativeFeedback>
         </View>
       </View>
@@ -33,23 +33,13 @@ export const Actions = (props: ActionsProps) => {
 };
 
 const styles = StyleSheet.create({
-  Wrapper: {
-    flex: 1,
-    alignSelf: "stretch"
-  },
   Buttons: {
-    flex: 1
+    marginTop: 30
   },
   ButtonWrapper: {
     alignItems: "center"
   },
-  Button: {
-    backgroundColor: "red",
-    width: 150,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center"
-  },
+  Button,
   ButtonText
 });
 

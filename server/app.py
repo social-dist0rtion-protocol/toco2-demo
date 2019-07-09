@@ -135,6 +135,8 @@ def trade():
     recipient_token = r.hget('player:{}'.format(recipient), 'pushToken')
     if not player_from or not recipient_token:
         raise APIError('unknown sender or recipient', 422)
+    if sender == recipient:
+        raise APIError('You cannot trade with yourself', 403)
 
     if r.exists('cooldown:{}:{}'.format(sender, recipient)) \
             or r.exists('cooldown:{}:{}'.format(recipient, sender)):

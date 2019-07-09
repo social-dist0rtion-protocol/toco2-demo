@@ -1,9 +1,9 @@
 import { Notifications } from "expo";
 import * as Permissions from "expo-permissions";
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Text, TextInput } from "react-native";
+import { View, StyleSheet, Text, TextInput, AsyncStorage } from "react-native";
 import { material, materialColors } from "react-native-typography";
-import { server, login, getRandomAvatar } from "../api";
+import { defaultServer, login, getRandomAvatar, setServer } from "../api";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
 import { Button, ButtonText, TextInputStyle, Label } from "../styles";
 import Overlay from "./Overlay";
@@ -19,7 +19,7 @@ type SignupProps = {
 
 const Signup = (props: SignupProps) => {
   const [name, setName] = useState("");
-  const [backend, setBackend] = useState(server);
+  const [backend, setBackend] = useState(defaultServer);
   const [loading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState("");
 
@@ -28,9 +28,11 @@ const Signup = (props: SignupProps) => {
   }, []);
 
   const onLoginPress = async () => {
-    if (!name.trim().length) return;
+    if (!name.trim().length || !backend.trim().length) return;
 
     let status: string;
+    setServer(backend);
+    AsyncStorage.setItem("server", backend);
     setLoading(true);
 
     try {
@@ -72,9 +74,14 @@ const Signup = (props: SignupProps) => {
       token = `fake-token-${Date.now()}`;
     }
 
-    const response = await login(token, name, avatar);
-    setLoading(false);
-    props.onLoginSuccess(response.auth, response.id, name, avatar);
+    try {
+      const response = await login(token, name, avatar);
+      setLoading(false);
+      props.onLoginSuccess(response.auth, response.id, name, avatar);
+    } catch (error) {
+      setLoading(false);
+      alert(`Something's wrong: ${error} 🤷`);
+    }
   };
 
   return (
@@ -88,7 +95,6 @@ const Signup = (props: SignupProps) => {
           value={name}
           placeholder="Your public name"
           placeholderTextColor={materialColors.whiteTertiary}
-          onEndEditing={onLoginPress}
         />
         <Text style={styles.Label}>Server</Text>
         <TextInput

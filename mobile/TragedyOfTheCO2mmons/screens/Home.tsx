@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AsyncStorage, Text, View, StyleSheet } from "react-native";
 import Signup from "../components/Signup";
-import { setJwt } from "../api";
+import { setJwt, setServer } from "../api";
 import Status from "../components/Status";
 import Actions from "../components/Actions";
 import Overlay from "../components/Overlay";
@@ -19,12 +19,15 @@ const HomeScreen = ({
   const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
-    AsyncStorage.multiGet(["jwt", "id", "name", "avatar"])
+    AsyncStorage.multiGet(["server", "jwt", "id", "name", "avatar"])
       .then(values => {
         values.forEach(keyValue => {
           const [key, value] = keyValue;
           if (value) {
             switch (key) {
+              case "server":
+                setServer(value);
+                break;
               case "jwt":
                 setLoggedIn(true);
                 setJwt(value);

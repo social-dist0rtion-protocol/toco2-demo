@@ -1,9 +1,17 @@
-export const server = "http://192.168.0.11:5000";
+import fetch_polyfill from "react-native-fetch-polyfill";
+
+const REQUEST_TIMEOUT = 10 * 1000;
+export const defaultServer = "https://d7110f04.eu.ngrok.io"; // local "http://192.168.0.11:5000";
 
 let auth = "";
+let server = defaultServer;
 
 export const setJwt = (jwt: string) => {
   auth = jwt;
+};
+
+export const setServer = (newServer: string) => {
+  server = newServer;
 };
 
 const defaultHeaders = {
@@ -19,8 +27,9 @@ const get = (
   const headers = authenticated
     ? { ...defaultHeaders, Authorization: `Bearer ${auth}` }
     : defaultHeaders;
-  return fetch(externalServer ? url : `${server}${url}`, {
+  return fetch_polyfill(externalServer ? url : `${server}${url}`, {
     method: "GET",
+    timeout: REQUEST_TIMEOUT,
     headers
   });
 };
@@ -29,9 +38,10 @@ const post = (url: string, body: any, authenticated: boolean = false) => {
   const headers = authenticated
     ? { ...defaultHeaders, Authorization: `Bearer ${auth}` }
     : defaultHeaders;
-  return fetch(`${server}${url}`, {
+  return fetch_polyfill(`${server}${url}`, {
     method: "POST",
     body: JSON.stringify(body),
+    timeout: REQUEST_TIMEOUT,
     headers
   });
 };

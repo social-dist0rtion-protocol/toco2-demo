@@ -14,6 +14,9 @@ export type Player = {
 type PlayerInfo = {
   name: string;
   avatar: string;
+  balance: string;
+  co2: string;
+  trees: string;
 };
 
 type TradeProps = {
@@ -41,7 +44,10 @@ export const TradeScreen = (props: TradeProps) => {
             .map<Player>(([id, player]) => ({
               id,
               name: player.name,
-              avatar: player.avatar
+              avatar: player.avatar,
+              balance: player.balance,
+              co2: player.co2,
+              trees: player.trees
             }))
             .sort((p1, p2) => {
               const n1 = p1.name.toLowerCase();
@@ -91,6 +97,7 @@ export const TradeScreen = (props: TradeProps) => {
           onPress={doTrade(item.id, item.name)}
         >
           <Text style={styles.Name}>{item.name}</Text>
+          <Text>CO₂: {item.co2}, trees: {item.trees}, balance: {item.balance}</Text>
         </TouchableNativeFeedback>
       </View>
     </View>

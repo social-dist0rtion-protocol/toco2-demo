@@ -114,6 +114,7 @@ def signup():
         client_id = uuid.uuid4().hex
         j['id'] = client_id
         j['co2'] = 0
+        j['trees'] = 0
         j['balance'] = initial_player_balance
         r.hmset('player:{}'.format(client_id), j)
         r.set(token_key, client_id)
@@ -215,6 +216,7 @@ def plant_tree(quantity):
                        .format(points_needed, balance), 403)
     new_balance = int(r.hincrby(player_key, 'balance', -points_needed))
     new_co2 = int(r.incrby('co2', -co2_per_tree * quantity))
+    r.hincrby(player_key, 'trees', quantity)
     return jsonify({
         'success': True, 'balance': new_balance, 'globalCO2': new_co2
         })
@@ -238,6 +240,9 @@ def get_status():
 def list_players():
     players = r.hgetall('players')
     decoded = {k: json.loads(v) for k, v in players.items()}
+    for player, values in decoded.items():
+        values['balance'], values['co2'], values['trees'] =\
+            r.hmget('player:{}'.format(player), 'balance', 'co2', 'trees')
     return jsonify(decoded)
 
 

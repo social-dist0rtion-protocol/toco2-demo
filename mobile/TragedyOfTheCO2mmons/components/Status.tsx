@@ -21,13 +21,19 @@ const Status = (props: StatusProps) => {
   const [refreshStatus, setRefreshStatus] = useState(false);
 
   useEffect(() => {
-    getStatus().then(response => {
-      setBalance(response.balance);
-      setCO2(response.co2);
-      setGlobalCO2(response.globalCO2);
-      setPending(response.pending);
-    });
+    if (refreshStatus) {
+      getStatus().then(response => {
+        setBalance(response.balance);
+        setCO2(response.co2);
+        setGlobalCO2(response.globalCO2);
+        setPending(response.pending);
+      });
+      setRefreshStatus(false);
+    }
   }, [refreshStatus]);
+
+  // load data on mount
+  useEffect(() => setRefreshStatus(true), []);
 
   props.navigation.addListener("didFocus", _ => setRefreshStatus(true));
 
@@ -111,4 +117,4 @@ const styles = StyleSheet.create({
   ButtonText
 });
 
-export default React.memo(Status);
+export default Status;

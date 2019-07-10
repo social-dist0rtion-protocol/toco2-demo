@@ -1,14 +1,9 @@
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableNativeFeedback,
-  TextInput
-} from "react-native";
+import { StyleSheet, View, Text, TextInput, Alert } from "react-native";
 import { Button, ButtonText, Label, TextInputStyle } from "../styles";
 import { plantTrees } from "../api";
-import Overlay from "../components/Overlay";
+import Overlay from "components/Overlay";
+import Touchable from "components/Touchable";
 
 export const PlantScreen = () => {
   const [trees, setTrees] = useState(10);
@@ -20,17 +15,17 @@ export const PlantScreen = () => {
       const response = await plantTrees(trees);
       setOverlayVisible(false);
       if (response.success) {
-        alert(
+        Alert.alert(
           `${trees} tree${
             trees === 1 ? "" : "s"
           } planted! 🌳\nYour new whatevzDAI balance: ${response.balance}`
         );
       } else {
-        alert(`Couldn't plant 😔 ${response.error}`);
+        Alert.alert(`Couldn't plant 😔 ${response.error}`);
       }
     } catch (e) {
       setOverlayVisible(false);
-      alert(`Something went wrong 🤦‍♂️ ${e}`);
+      Alert.alert(`Something went wrong 🤦‍♂️ ${e}`);
     }
   };
 
@@ -49,11 +44,11 @@ export const PlantScreen = () => {
         maxLength={4}
       />
       <View style={styles.ButtonWrapper}>
-        <TouchableNativeFeedback onPress={doPlant}>
+        <Touchable onPress={doPlant}>
           <View style={styles.Button}>
             <Text style={styles.ButtonText}>PLANT TREES</Text>
           </View>
-        </TouchableNativeFeedback>
+        </Touchable>
       </View>
       <Overlay show={overlayVisible} />
     </View>
@@ -76,9 +71,12 @@ const styles = StyleSheet.create({
     ...Button,
     backgroundColor: "#50c878"
   },
+  TextInputStyle: {
+    ...TextInputStyle,
+    minWidth: 80
+  },
   ButtonText,
-  Label,
-  TextInputStyle
+  Label
 });
 
 PlantScreen.navigationOptions = () => ({

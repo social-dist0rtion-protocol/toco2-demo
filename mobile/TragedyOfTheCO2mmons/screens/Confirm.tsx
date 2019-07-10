@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, Image, FlatList } from "react-native";
-import { TouchableNativeFeedback } from "react-native-gesture-handler";
+import { StyleSheet, View, Text, Image, FlatList, Alert } from "react-native";
 import { Player } from "../screens/Trade";
 import { material } from "react-native-typography";
 import { getPendingTransactions, confirmTx } from "../api";
+import Touchable from "components/Touchable";
 
 type Transaction = {
   id: string;
@@ -49,13 +49,19 @@ export const ConfirmScreen = () => {
     try {
       const response = await confirmTx(txId);
       if (response.success) {
-        alert(`Yay! 🔥 ${JSON.stringify(response)}`);
+        Alert.alert(
+          `Yay! You just got ${response.points} whatevzDAI releasing ${
+            response.co2
+          } tons of CO₂ to the atmosphere! 🔥`
+        );
         doRefresh();
       } else {
-        alert(`Couldn't confirm tx ${txId} with ${name}: ${response.error} ☹️`);
+        Alert.alert(
+          `Couldn't confirm tx ${txId} with ${name}: ${response.error} ☹️`
+        );
       }
     } catch (error) {
-      alert(`Something went wrong: ${error} 😟`);
+      Alert.alert(`Something went wrong: ${error} 😟`);
     }
   };
 
@@ -63,7 +69,7 @@ export const ConfirmScreen = () => {
     <View style={styles.Transaction} key={item.id}>
       <Image style={styles.Image} source={{ uri: item.from.avatar }} />
       <View style={styles.TouchableWrapper}>
-        <TouchableNativeFeedback
+        <Touchable
           style={styles.Touchable}
           onPress={doConfirm(item.id, item.from.name)}
         >
@@ -71,7 +77,7 @@ export const ConfirmScreen = () => {
             <Text style={styles.TransactionId}>{item.id}</Text>
             <Text style={styles.Name}>{item.from.name}</Text>
           </View>
-        </TouchableNativeFeedback>
+        </Touchable>
       </View>
     </View>
   );

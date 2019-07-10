@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { StyleSheet, View, Text, TouchableNativeFeedback } from "react-native";
+import React from "react";
+import { StyleSheet, View, Text } from "react-native";
 import { NavigationScreenProps } from "react-navigation";
 import { Button, ButtonText } from "../styles";
+import Touchable from "components/Touchable";
 
 type ActionsProps = {
   id: string;
@@ -13,20 +14,18 @@ export const Actions = (props: ActionsProps) => {
     <View>
       <View style={styles.Buttons}>
         <View style={styles.ButtonWrapper}>
-          <TouchableNativeFeedback
+          <Touchable
             onPress={() => props.navigation.navigate("Trade", { id: props.id })}
           >
             <View style={styles.Button}>
               <Text style={styles.ButtonText}>TRADE</Text>
             </View>
-          </TouchableNativeFeedback>
-          <TouchableNativeFeedback
-            onPress={() => props.navigation.navigate("Plant")}
-          >
+          </Touchable>
+          <Touchable onPress={() => props.navigation.navigate("Plant")}>
             <View style={styles.Button}>
               <Text style={styles.ButtonText}>PLANT TREES</Text>
             </View>
-          </TouchableNativeFeedback>
+          </Touchable>
         </View>
       </View>
     </View>

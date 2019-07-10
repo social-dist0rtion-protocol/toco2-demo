@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, Image } from "react-native";
 import { material, systemWeights } from "react-native-typography";
 import { getStatus } from "../api";
 import { NavigationScreenProps } from "react-navigation";
-import { TouchableNativeFeedback } from "react-native-gesture-handler";
 import { Button, ButtonText } from "../styles";
+import Touchable from "components/Touchable";
 
 type StatusProps = {
   id: string;
@@ -64,15 +64,13 @@ const Status = (props: StatusProps) => {
         </Text>
         {pending.length ? (
           <View style={styles.ButtonWrapper}>
-            <TouchableNativeFeedback
-              onPress={() => props.navigation.navigate("Confirm")}
-            >
+            <Touchable onPress={() => props.navigation.navigate("Confirm")}>
               <View style={styles.Button}>
                 <Text style={styles.ButtonText}>
                   {pending.length} pending tx
                 </Text>
               </View>
-            </TouchableNativeFeedback>
+            </Touchable>
           </View>
         ) : null}
       </View>

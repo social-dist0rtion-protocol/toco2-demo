@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { AsyncStorage, Text, View, StyleSheet } from "react-native";
-import Signup from "../components/Signup";
+import { AsyncStorage, View, StyleSheet } from "react-native";
+import Signup from "components/Signup";
 import { setJwt, setServer } from "../api";
-import Status from "../components/Status";
-import Actions from "../components/Actions";
-import Overlay from "../components/Overlay";
+import Status from "components/Status";
+import Actions from "components/Actions";
+import Overlay from "components/Overlay";
 import { NavigationScreenProp } from "react-navigation";
 
 const HomeScreen = ({

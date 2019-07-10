@@ -7,6 +7,7 @@ import Actions from "components/Actions";
 import Overlay from "components/Overlay";
 import { NavigationScreenProp } from "react-navigation";
 import { ScrollView } from "react-native-gesture-handler";
+import { Notifications } from "expo";
 
 const HomeScreen = ({
   navigation
@@ -21,6 +22,8 @@ const HomeScreen = ({
   const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
+    Notifications.addListener(() => setRefreshing(true));
+
     AsyncStorage.multiGet(["server", "jwt", "id", "name", "avatar"])
       .then(values => {
         values.forEach(keyValue => {

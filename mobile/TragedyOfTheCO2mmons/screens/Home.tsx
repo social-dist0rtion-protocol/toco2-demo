@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { AsyncStorage, View, StyleSheet } from "react-native";
+import { AsyncStorage, View, StyleSheet, RefreshControl } from "react-native";
 import Signup from "components/Signup";
 import { setJwt, setServer } from "../api";
 import Status from "components/Status";
 import Actions from "components/Actions";
 import Overlay from "components/Overlay";
 import { NavigationScreenProp } from "react-navigation";
+import { ScrollView } from "react-native-gesture-handler";
 
 const HomeScreen = ({
   navigation
@@ -14,6 +15,7 @@ const HomeScreen = ({
 }) => {
   const [ready, setReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -71,19 +73,36 @@ const HomeScreen = ({
     setLoggedIn(true);
   };
 
+  const onRefresh = () => setTimeout(() => setRefreshing(false), 1000);
+
   if (!ready) return <Overlay show={true} />;
 
   return (
-    <View style={styles.Wrapper}>
+    <ScrollView
+      contentContainerStyle={styles.Wrapper}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => setRefreshing(true)}
+        />
+      }
+    >
       {loggedIn ? (
         <View>
-          <Status id={id} name={name} avatar={avatar} navigation={navigation} />
+          <Status
+            id={id}
+            name={name}
+            avatar={avatar}
+            navigation={navigation}
+            doRefresh={refreshing}
+            onRefresh={onRefresh}
+          />
           <Actions id={id} navigation={navigation} />
         </View>
       ) : (
         <Signup onLoginSuccess={onLoginSuccess} />
       )}
-    </View>
+    </ScrollView>
   );
 };
 

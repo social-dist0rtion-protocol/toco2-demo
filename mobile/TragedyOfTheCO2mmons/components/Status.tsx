@@ -11,6 +11,8 @@ type StatusProps = {
   name: string;
   avatar: string;
   navigation: NavigationScreenProps["navigation"];
+  doRefresh: boolean;
+  onRefresh: () => any;
 };
 
 const Status = (props: StatusProps) => {
@@ -22,7 +24,7 @@ const Status = (props: StatusProps) => {
   const [refreshStatus, setRefreshStatus] = useState(false);
 
   useEffect(() => {
-    if (refreshStatus) {
+    if (refreshStatus || props.doRefresh) {
       getStatus().then(response => {
         setBalance(response.balance);
         setCO2(response.co2);
@@ -31,8 +33,9 @@ const Status = (props: StatusProps) => {
         setPending(response.pending);
       });
       setRefreshStatus(false);
+      props.onRefresh();
     }
-  }, [refreshStatus]);
+  }, [refreshStatus, props.doRefresh]);
 
   // load data on mount
   useEffect(() => setRefreshStatus(true), []);

@@ -33,6 +33,9 @@ r = FlaskRedis(app, decode_responses=True)
 
 # =========================== GAME PARAMETERS =============================== #
 player_required_fields = ['name', 'avatar', 'pushToken']
+score_keys = ['balances', 'emissions', 'trees']
+score_field_map = {'balances': 'balance', 'emissions': 'co2', 'trees': 'trees'}
+initial_scores = {'balances': 20, 'emissions': 0, 'trees': 0}
 total_co2 = 0
 co2_per_tree = 1
 cooldown_secs = 60
@@ -40,7 +43,6 @@ initial_co2 = 0
 initial_pts_per_trade = 10
 initial_co2_per_trade = 10
 initial_pts_per_tree = 1
-initial_player_balance = 20
 # =========================================================================== #
 
 
@@ -69,10 +71,17 @@ app.register_error_handler(Exception, handle_error)
 
 
 def reset_game():
-    r.set('co2', initial_co2)
-    r.set('co2:tick', initial_co2_per_trade)
-    r.set('pts:tick', initial_pts_per_trade)
-    r.set('tree:pts', initial_pts_per_tree)
+    players = r.hkeys('players')
+    pipe = r.pipeline()
+    pipe.set('co2', initial_co2)
+    pipe.set('co2:tick', initial_co2_per_trade)
+    pipe.set('pts:tick', initial_pts_per_trade)
+    pipe.set('tree:pts', initial_pts_per_tree)
+    pipe.delete(*score_keys)
+    for score_key in score_keys:
+        for player in players:
+            pipe.zadd(score_key, {player: initial_scores[score_key]})
+    pipe.execute()
 
 
 if not r.exists('co2'):
@@ -113,14 +122,17 @@ def signup():
     else:
         client_id = uuid.uuid4().hex
         j['id'] = client_id
-        j['co2'] = 0
-        j['trees'] = 0
-        j['balance'] = initial_player_balance
-        r.hmset('player:{}'.format(client_id), j)
-        r.set(token_key, client_id)
-        r.hset('players',
-               client_id,
-               json.dumps({x: j[x] for x in ['name', 'avatar']}))
+
+        pipe = r.pipeline()
+        pipe.hmset('player:{}'.format(client_id), j)
+        pipe.set(token_key, client_id)
+        pipe.hset('players',
+                  client_id,
+                  json.dumps({x: j[x] for x in ['name', 'avatar']}))
+        for score_key in score_keys:
+            pipe.zadd(score_key, {client_id: initial_scores[score_key]})
+        pipe.execute()
+
         created = True
 
     return jsonify({
@@ -165,13 +177,12 @@ def trade():
 @app.route('/api/confirm/<transaction_id>', methods=['POST'])
 def confirm(transaction_id):
     tx_key = 'tx:{}'.format(transaction_id)
-    print(tx_key)
     tx = r.hmget(tx_key, 'from', 'to', 'executed')
     if not tx:
         raise APIError('Unknown transaction', 422)
 
     p1, p2, executed = tx
-    print('p1: {}, p2: {}, exec: {}'.format(p1, p2, executed))
+    print('{} => {} tx {}, exec: {}'.format(p1, p2, transaction_id, executed))
     if p2 != get_client_id() or executed == 1:
         raise APIError('Transaction already executed' if executed == 1
                        else 'Only {} can confirm this transaction'.format(p2),
@@ -180,24 +191,27 @@ def confirm(transaction_id):
     pts = int(r.get('pts:tick'))
     co2 = int(r.get('co2:tick'))
 
-    for p in [p1, p2]:
-        k = 'player:{}'.format(p)
-        r.hincrby(k, 'balance', pts)
-        r.hincrby(k, 'co2', co2)
+    pipe = r.pipeline()
 
-    r.incrby('co2', 2 * pts)
-    r.hset(tx_key, 'executed', 1)
-    r.hdel('player:{}:pending'.format(p2), transaction_id)
+    for p in [p1, p2]:
+        pipe.zincrby('balances', pts, p)
+        pipe.zincrby('emissions', co2, p)
+
+    pipe.incrby('co2', 2 * pts)
+    pipe.hset(tx_key, 'executed', 1)
+    pipe.hdel('player:{}:pending'.format(p2), transaction_id)
+    pipe.execute()
 
     p1_token = r.hget('player:{}'.format(p1), 'pushToken')
     if not p1_token:
         print('WARNING! Tried to notify {} about {}, but no push token is set'
               .format(p1, tx))
     else:
+        p2_name = r.hget('player:{}'.format(p2), 'name')
         push(p1_token,
              'Trade successful!',
-             '{} confirmed your transaction {}, so you gained {} points!'
-             .format(p2, transaction_id, pts))
+             '{} ({}) confirmed your transaction {}, so you gained {} points!'
+             .format(p2_name, p2, transaction_id, pts))
 
     return jsonify({'success': True, 'points': pts, 'co2': co2})
 
@@ -205,30 +219,41 @@ def confirm(transaction_id):
 @app.route('/api/plant/<int:quantity>', methods=['POST'])
 def plant_tree(quantity):
     client = get_client_id()
-    player_key = 'player:{}'.format(client)
     points_needed = int(r.get('tree:pts')) * quantity
-    balance = int(r.hget(player_key, 'balance'))
+    balance = r.zscore('balances', client)
+    if balance is None:
+        raise APIError('Unknown player', 403)
+    balance = int(balance)
     print('{} wants to plant {} tree(s), pts needed: {}, balance: {}'
           .format(client, quantity, points_needed, balance))
 
     if balance < points_needed:
         raise APIError('{} points needed, balance is {}'
                        .format(points_needed, balance), 403)
-    new_balance = int(r.hincrby(player_key, 'balance', -points_needed))
-    new_co2 = int(r.incrby('co2', -co2_per_tree * quantity))
-    r.hincrby(player_key, 'trees', quantity)
+
+    pipe = r.pipeline()
+    pipe.zincrby('balances', -points_needed, client)
+    pipe.zincrby('trees', quantity, client)
+    pipe.incrby('co2', -co2_per_tree * quantity)
+
+    new_balance, new_trees, new_co2 = pipe.execute()
+
     return jsonify({
-        'success': True, 'balance': new_balance, 'globalCO2': new_co2
-    })
+        'success': True, 'balance': int(new_balance), 'globalCO2': int(new_co2)
+        })
 
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
     client = get_client_id()
-    balance, co2, trees = \
-        r.hmget('player:{}'.format(client), 'balance', 'co2', 'trees')
-    if not balance or not co2:
+    pipe = r.pipeline()
+    for score_key in score_keys:
+        pipe.zscore(score_key, client)
+
+    scores = pipe.execute()
+    if any([x is None for x in scores]):
         raise APIError('unknown client', 403)
+    balance, co2, trees = scores
     global_co2 = r.get('co2')
     pending = r.hkeys('player:{}:pending'.format(client))
     return jsonify({
@@ -241,14 +266,17 @@ def get_status():
 def list_players():
     players = r.hgetall('players')
     decoded = {k: json.loads(v) for k, v in players.items()}
-    extra_fields = ['balance', 'co2', 'trees']
-    for player, values in decoded.items():
-        data = r.hmget('player:{}'.format(player), *extra_fields)
-        for i in range(len(extra_fields)):
-            try:
-                values[extra_fields[i]] = int(data[i])
-            except:
-                values[extra_fields[i]] = 0
+
+    pipe = r.pipeline()
+    for score_key in score_keys:
+        pipe.zrangebyscore(score_key, '-inf', '+inf',  withscores=True,
+                           score_cast_func=lambda x: int(x))
+    balances, emissions, trees = pipe.execute()
+
+    for k, v in zip(score_keys, [balances, emissions, trees]):
+        for player, score in v:
+            # score_field_map has entries like 'emissions': 'co2'
+            decoded[player][score_field_map[k]] = score
 
     return jsonify(decoded)
 

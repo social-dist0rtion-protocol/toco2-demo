@@ -17,6 +17,7 @@ const Status = (props: StatusProps) => {
   const [balance, setBalance] = useState(0);
   const [CO2, setCO2] = useState(0);
   const [globalCO2, setGlobalCO2] = useState(0);
+  const [trees, setTrees] = useState(0);
   const [pending, setPending] = useState([]);
   const [refreshStatus, setRefreshStatus] = useState(false);
 
@@ -26,6 +27,7 @@ const Status = (props: StatusProps) => {
         setBalance(response.balance);
         setCO2(response.co2);
         setGlobalCO2(response.globalCO2);
+        setTrees(response.trees);
         setPending(response.pending);
       });
       setRefreshStatus(false);
@@ -56,6 +58,9 @@ const Status = (props: StatusProps) => {
         </Text>
         <Text style={styles.StatusText}>
           Current CO₂ levels:<Text style={styles.Bold}> {globalCO2} </Text>ppm
+        </Text>
+        <Text style={styles.StatusText}>
+          Trees planted:<Text style={styles.Bold}> {trees}</Text>
         </Text>
         {pending.length ? (
           <View style={styles.ButtonWrapper}>

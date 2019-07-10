@@ -23,7 +23,7 @@ export const PlantScreen = () => {
         alert(
           `${trees} tree${
             trees === 1 ? "" : "s"
-          } planted! 🌳 Your new whatevzDAI balance: ${response.balance}`
+          } planted! 🌳\nYour new whatevzDAI balance: ${response.balance}`
         );
       } else {
         alert(`Couldn't plant 😔 ${response.error}`);

@@ -5,16 +5,17 @@ import { getPlayerList, trade } from "../api";
 import { material } from "react-native-typography";
 import { NavigationScreenProps } from "react-navigation";
 
-export type Player = {
-  id: string;
+interface PlayerInfo {
   name: string;
   avatar: string;
-};
+  balance: number;
+  co2: number;
+  trees: number;
+}
 
-type PlayerInfo = {
-  name: string;
-  avatar: string;
-};
+export interface Player extends PlayerInfo {
+  id: string;
+}
 
 type TradeProps = {
   navigation: NavigationScreenProps["navigation"];
@@ -41,7 +42,10 @@ export const TradeScreen = (props: TradeProps) => {
             .map<Player>(([id, player]) => ({
               id,
               name: player.name,
-              avatar: player.avatar
+              avatar: player.avatar,
+              balance: player.balance,
+              co2: player.co2,
+              trees: player.trees
             }))
             .sort((p1, p2) => {
               const n1 = p1.name.toLowerCase();
@@ -91,6 +95,9 @@ export const TradeScreen = (props: TradeProps) => {
           onPress={doTrade(item.id, item.name)}
         >
           <Text style={styles.Name}>{item.name}</Text>
+          <Text>
+            💰 {item.balance} 🌫️ {item.co2} 🌳 {item.trees}
+          </Text>
         </TouchableNativeFeedback>
       </View>
     </View>

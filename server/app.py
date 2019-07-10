@@ -114,6 +114,7 @@ def signup():
         client_id = uuid.uuid4().hex
         j['id'] = client_id
         j['co2'] = 0
+        j['trees'] = 0
         j['balance'] = initial_player_balance
         r.hmset('player:{}'.format(client_id), j)
         r.set(token_key, client_id)
@@ -123,8 +124,8 @@ def signup():
         created = True
 
     return jsonify({
-            'success': created, 'id': client_id, 'auth': write_jwt(client_id)
-            })
+        'success': created, 'id': client_id, 'auth': write_jwt(client_id)
+    })
 
 
 @app.route('/api/trade', methods=['POST'])
@@ -215,29 +216,40 @@ def plant_tree(quantity):
                        .format(points_needed, balance), 403)
     new_balance = int(r.hincrby(player_key, 'balance', -points_needed))
     new_co2 = int(r.incrby('co2', -co2_per_tree * quantity))
+    r.hincrby(player_key, 'trees', quantity)
     return jsonify({
         'success': True, 'balance': new_balance, 'globalCO2': new_co2
-        })
+    })
 
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
     client = get_client_id()
-    balance, co2 = r.hmget('player:{}'.format(client), 'balance', 'co2')
+    balance, co2, trees = \
+        r.hmget('player:{}'.format(client), 'balance', 'co2', 'trees')
     if not balance or not co2:
         raise APIError('unknown client', 403)
     global_co2 = r.get('co2')
     pending = r.hkeys('player:{}:pending'.format(client))
     return jsonify({
         'balance': int(balance), 'co2': int(co2), 'globalCO2': int(global_co2),
-        'pending': pending
-        })
+        'trees': int(trees), 'pending': pending
+    })
 
 
 @app.route('/api/players', methods=['GET'])
 def list_players():
     players = r.hgetall('players')
     decoded = {k: json.loads(v) for k, v in players.items()}
+    extra_fields = ['balance', 'co2', 'trees']
+    for player, values in decoded.items():
+        data = r.hmget('player:{}'.format(player), *extra_fields)
+        for i in range(len(extra_fields)):
+            try:
+                values[extra_fields[i]] = int(data[i])
+            except:
+                values[extra_fields[i]] = 0
+
     return jsonify(decoded)
 
 
@@ -256,10 +268,10 @@ def list_pending():
             pipe.hmget('player:{}'.format(sender), 'id', 'name', 'avatar')
         senders = pipe.execute()
         transactions = {
-                tx: {'from': {'id': s[0], 'name': s[1], 'avatar': s[2]}}
-                for s, tx in zip(senders, pending.keys())}
+            tx: {'from': {'id': s[0], 'name': s[1], 'avatar': s[2]}}
+            for s, tx in zip(senders, pending.keys())}
         transactions = OrderedDict(sorted(transactions.items(),
-                                   key=lambda x: pending[x[0]]))
+                                          key=lambda x: pending[x[0]]))
     return jsonify({'pending': transactions})
 
 

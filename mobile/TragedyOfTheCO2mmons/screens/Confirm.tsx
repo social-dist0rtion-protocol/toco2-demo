@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, Image, FlatList, Alert } from "react-native";
+import { StyleSheet, View, Text, Image, FlatList } from "react-native";
 import { Player } from "../screens/Trade";
 import { material } from "react-native-typography";
 import { getPendingTransactions, confirmTx } from "../api";
 import Touchable from "components/Touchable";
+import { showAlert } from "components/Alert";
 
 type Transaction = {
   id: string;
@@ -49,19 +50,19 @@ export const ConfirmScreen = () => {
     try {
       const response = await confirmTx(txId);
       if (response.success) {
-        Alert.alert(
+        showAlert(
           `Yay! You just got ${response.points} whatevzDAI releasing ${
             response.co2
           } tons of CO₂ to the atmosphere! 🔥`
         );
         doRefresh();
       } else {
-        Alert.alert(
+        showAlert(
           `Couldn't confirm tx ${txId} with ${name}: ${response.error} ☹️`
         );
       }
     } catch (error) {
-      Alert.alert(`Something went wrong: ${error} 😟`);
+      showAlert(`Something went wrong: ${error} 😟`);
     }
   };
 

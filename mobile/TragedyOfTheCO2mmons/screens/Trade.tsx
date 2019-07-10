@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, FlatList, Image, Alert } from "react-native";
+import { StyleSheet, View, Text, FlatList, Image } from "react-native";
 import { getPlayerList, trade } from "../api";
 import { material } from "react-native-typography";
 import { NavigationScreenProps } from "react-navigation";
 import Touchable from "components/Touchable";
+import { showAlert } from "components/Alert";
 
 interface PlayerInfo {
   name: string;
@@ -73,18 +74,16 @@ export const TradeScreen = (props: TradeProps) => {
     try {
       const response = await trade(id);
       if (response.success) {
-        Alert.alert(
+        showAlert(
           `Your transaction was created with id ${
             response.tx
           } and must be approved by ${dstPlayerName} ⏳`
         );
       } else {
-        Alert.alert(
-          `Couldn't trade with ${dstPlayerName}: ${response.error} 🤷‍♂️`
-        );
+        showAlert(`Couldn't trade with ${dstPlayerName}: ${response.error} 🤷‍♂️`);
       }
     } catch (error) {
-      Alert.alert(`Something went wrong: ${error} 🤦‍♂️`);
+      showAlert(`Something went wrong: ${error} 🤦‍♂️`);
     }
   };
 

@@ -1,19 +1,13 @@
 import { Notifications } from "expo";
 import * as Permissions from "expo-permissions";
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  TextInput,
-  AsyncStorage,
-  Alert
-} from "react-native";
+import { View, StyleSheet, Text, TextInput, AsyncStorage } from "react-native";
 import { material, materialColors } from "react-native-typography";
 import { defaultServer, login, getRandomAvatar, setServer } from "../api";
 import { Button, ButtonText, TextInputStyle, Label } from "../styles";
 import Overlay from "components/Overlay";
 import Touchable from "components/Touchable";
+import { showAlert } from "components/Alert";
 
 type SignupProps = {
   onLoginSuccess: (
@@ -58,7 +52,7 @@ const Signup = (props: SignupProps) => {
       try {
         status = (await Permissions.askAsync(Permissions.NOTIFICATIONS)).status;
       } catch (error) {
-        Alert.alert(`Couldn't enable push notifications: ${error}`);
+        showAlert(`Couldn't enable push notifications: ${error}`);
         status = "error";
       }
       finalStatus = status;
@@ -72,7 +66,7 @@ const Signup = (props: SignupProps) => {
       try {
         token = await Notifications.getExpoPushTokenAsync();
       } catch (error) {
-        Alert.alert(
+        showAlert(
           `Couldn't get a token, push notifications will be disabled.\n${error}`
         );
         token = `fake-token-${Date.now()}`;
@@ -87,7 +81,7 @@ const Signup = (props: SignupProps) => {
       props.onLoginSuccess(response.auth, response.id, name, avatar);
     } catch (error) {
       setLoading(false);
-      Alert.alert(`Something's wrong: ${error} 🤷`);
+      showAlert(`Something's wrong: ${error} 🤷`);
     }
   };
 

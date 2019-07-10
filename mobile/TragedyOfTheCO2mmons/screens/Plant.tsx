@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, TextInput, Alert } from "react-native";
+import { StyleSheet, View, Text, TextInput } from "react-native";
 import { Button, ButtonText, Label, TextInputStyle } from "../styles";
 import { plantTrees } from "../api";
 import Overlay from "components/Overlay";
 import Touchable from "components/Touchable";
+import { showAlert } from "components/Alert";
 
 export const PlantScreen = () => {
   const [trees, setTrees] = useState(10);
@@ -15,17 +16,17 @@ export const PlantScreen = () => {
       const response = await plantTrees(trees);
       setOverlayVisible(false);
       if (response.success) {
-        Alert.alert(
+        showAlert(
           `${trees} tree${
             trees === 1 ? "" : "s"
           } planted! 🌳\nYour new whatevzDAI balance: ${response.balance}`
         );
       } else {
-        Alert.alert(`Couldn't plant 😔 ${response.error}`);
+        showAlert(`Couldn't plant 😔 ${response.error}`);
       }
     } catch (e) {
       setOverlayVisible(false);
-      Alert.alert(`Something went wrong 🤦‍♂️ ${e}`);
+      showAlert(`Something went wrong 🤦‍♂️ ${e}`);
     }
   };
 

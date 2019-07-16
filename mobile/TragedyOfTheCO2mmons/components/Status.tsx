@@ -73,7 +73,7 @@ const Status = (props: StatusProps) => {
         <Text style={styles.StatusText}>
           Trees planted:<Text style={styles.Bold}> {trees}</Text>
         </Text>
-        {pending.length ? (
+        {pending && pending.length ? (
           <View style={styles.ButtonWrapper}>
             <Touchable onPress={onConfirm}>
               <View style={styles.Button}>

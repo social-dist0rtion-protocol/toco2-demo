@@ -47,19 +47,34 @@ export const ConfirmScreen = () => {
   const keyExtractor = (item: Transaction) => item.id;
 
   const askConfirm = (txId: string, name: string) => () =>
-    Alert.alert("Please confirm", "Do you want to approve this transaction?", [
-      { text: "No", style: "cancel" },
-      { text: "Yes", onPress: doConfirm(txId, name) }
+    Alert.alert("Fair trade? 🤨", `Do you want to be fair with ${name}?`, [
+      {
+        text: "No, exploit!",
+        style: "cancel",
+        onPress: doConfirm(txId, name, false)
+      },
+      { text: "Yes, be fair", onPress: doConfirm(txId, name, true) }
     ]);
 
-  const doConfirm = (txId: string, name: string) => async () => {
+  const doConfirm = (
+    txId: string,
+    name: string,
+    beFair: boolean
+  ) => async () => {
     try {
-      const response = await confirmTx(txId);
+      const response = await confirmTx(txId, beFair);
       if (response.success) {
+        const happy = response.points >= response.otherPoints;
         showAlert(
-          `Yay! You just got ${response.points} whatevzDAI releasing ${
+          `${happy ? "Yay! " : ""}You just got ${
+            response.points
+          } whatevzDAI releasing ${
             response.co2
-          } tons of CO₂ to the atmosphere! 🔥`
+          } tons of CO₂ to the atmosphere! 🔥\n${
+            happy ? "" : "...but "
+          }${name} got ${response.otherPoints} and emitted ${
+            response.otherCo2
+          } tons of CO₂${happy ? "! 🏭" : " 🤔"}`
         );
         doRefresh();
       } else {
@@ -83,7 +98,9 @@ export const ConfirmScreen = () => {
         >
           <View>
             <Text style={styles.TransactionId}>{item.id}</Text>
-            <Text style={styles.Name}>{item.from.name}</Text>
+            <Text style={styles.Name} numberOfLines={1}>
+              {item.from.name}
+            </Text>
           </View>
         </Touchable>
       </View>

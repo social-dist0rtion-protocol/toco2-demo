@@ -37,7 +37,6 @@ player_required_fields = ['name', 'avatar', 'pushToken']
 score_keys = ['balances', 'emissions', 'trees']
 score_field_map = {'balances': 'balance', 'emissions': 'co2', 'trees': 'trees'}
 initial_scores = {'balances': 20, 'emissions': 0, 'trees': 0}
-stakes_enabled = True
 total_co2 = 0
 co2_per_tree = 1
 cooldown_secs = 10
@@ -45,6 +44,9 @@ initial_co2 = 0
 initial_pts_per_trade = 10
 initial_co2_per_trade = 10
 initial_pts_per_tree = 1
+prisoners_dilemma_enabled = True
+pd_high_value = 10
+pd_low_value = 4
 # =========================================================================== #
 
 
@@ -75,7 +77,7 @@ app.register_error_handler(Exception, handle_error)
 def reset_game():
     players = r.hkeys('players')
     pipe = r.pipeline()
-    pipe.set('stakes_enabled', str(stakes_enabled))
+    pipe.set('prisoners_dilemma', str(prisoners_dilemma_enabled))
     pipe.set('co2', initial_co2)
     pipe.set('co2:tick', initial_co2_per_trade)
     pipe.set('pts:tick', initial_pts_per_trade)
@@ -112,10 +114,7 @@ def get_client_id():
         raise APIError('Invalid JWT', 401)
 
 
-def do_trade(p1, p2, transaction_id):
-    p1_k, p1_pts, p1_stake = p1
-    p2_k, p2_pts, p2_stake = p2
-
+def trade_rich_wins(p1_k, p1_pts, p2_k, p2_pts, transaction_id):
     if abs(p1_pts - p2_pts) < 20:
         max_pts = min_pts = 10
     else:
@@ -142,6 +141,39 @@ def do_trade(p1, p2, transaction_id):
 
     # co2 and points are the same
     return ((p1_result, p1_result), (p2_result, p2_result))
+
+
+def trade_with_dilemma(p1_k, p1_fair, p2_k, p2_fair, transaction_id):
+    if p1_fair:
+        p1_co2 = pd_low_value if p2_fair else pd_high_value
+        p1_pts = pd_low_value
+        p2_co2 = pd_low_value
+        p2_pts = pd_low_value if p2_fair else pd_high_value
+    else:
+        p1_co2 = pd_low_value if p2_fair else pd_high_value
+        p1_pts = pd_high_value
+        p2_co2 = pd_high_value
+        p2_pts = pd_low_value if p2_fair else pd_high_value
+
+    pipe = r.pipeline()
+    pipe.zincrby('balances', p1_pts, p1_k)
+    pipe.zincrby('emissions', p1_co2, p1_k)
+    pipe.zincrby('balances', p2_pts, p2_k)
+    pipe.zincrby('emissions', p2_co2, p2_k)
+
+    pipe.incrby('co2', p1_co2 + p2_co2)
+    pipe.hset('tx:{}'.format(transaction_id), 'executed', 1)
+    pipe.hdel('player:{}:pending'.format(p2_k), transaction_id)
+    pipe.execute()
+
+    return ((p1_pts, p1_co2), (p2_pts, p2_co2))
+
+
+def do_trade(p1, p2, transaction_id):
+    if r.get('prisoners_dilemma') == 'True':
+        return trade_with_dilemma(p1[0], p1[2], p2[0], p2[2], transaction_id)
+    else:
+        return trade_rich_wins(p1[0], p1[1], p2[0], p2[1], transaction_id)
 
 
 @app.route('/api/signup', methods=['POST'])
@@ -192,13 +224,13 @@ def trade():
                        429)
 
     j = request.get_json()
-    if not j or 'stake' not in j:
-        if r.get('stakes_enabled') == 'True':
-            raise APIError('You must set a stake', 400)
+    if not j or 'fair' not in j:
+        if r.get('prisoners_dilemma') == 'True':
+            raise APIError('You must choose your fairness', 400)
         else:
-            stake = 0
+            fair = True
     else:
-        stake = j['stake']
+        fair = j['fair']
 
     r.setex('cooldown:{}:{}'.format(sender, recipient),
             cooldown_secs,
@@ -206,7 +238,7 @@ def trade():
 
     tx_id = uuid.uuid4().hex
     r.hmset('tx:{}'.format(tx_id),
-            {'from': player_from['id'], 'to': recipient, 'stake': stake})
+            {'from': player_from['id'], 'to': recipient, 'fair': str(fair)})
 
     r.hmset('player:{}:pending'.format(recipient), {tx_id: int(time.time())})
 
@@ -221,28 +253,29 @@ def trade():
 @app.route('/api/confirm/<transaction_id>', methods=['POST'])
 def confirm(transaction_id):
     tx_key = 'tx:{}'.format(transaction_id)
-    tx = r.hmget(tx_key, 'from', 'to', 'executed', 'stake')
+    tx = r.hmget(tx_key, 'from', 'to', 'executed', 'fair')
     if not tx:
         raise APIError('Unknown transaction', 422)
 
     j = request.get_json()
-    if not j or 'stake' not in j:
-        if r.get('stakes_enabled') == 'True':
-            raise APIError('You must set a stake', 400)
+    if not j or 'fair' not in j:
+        if r.get('prisoners_dilemma') == 'True':
+            raise APIError('You must choose your fairness', 400)
         else:
-            p2_stake = None
+            p2_fair = True
     else:
-        p2_stake = j['stake']
+        p2_fair = j['fair']
 
-    p1, p2, executed, p1_stake = tx
+    p1, p2, executed, p1_fair = tx
+    p1_fair = p1_fair.lower() == 'true'
 
     if p2 != get_client_id() or executed == 1:
         raise APIError('Transaction already executed' if executed == 1
                        else 'Only {} can confirm this transaction'.format(p2),
                        403)
 
-    print('{} => {} tx {}, exec: {}, p1_stake: {}, p2_stake: {}'
-          .format(p1, p2, transaction_id, executed, p1_stake, p2_stake))
+    print('{} => {} tx {}, exec: {}, p1_fair: {}, p2_fair: {}'
+          .format(p1, p2, transaction_id, executed, p1_fair, p2_fair))
 
     pipe = r.pipeline()
 
@@ -250,10 +283,10 @@ def confirm(transaction_id):
         pipe.zscore('balances', p)
     p1_b, p2_b = pipe.execute()
 
-    p1_result, p2_result = do_trade((p1, int(p1_b), p1_stake),
-                                    (p2, int(p2_b), p2_stake),
+    p1_result, p2_result = do_trade((p1, int(p1_b), p1_fair),
+                                    (p2, int(p2_b), p2_fair),
                                     transaction_id)
-    p1_pts = p1_result[0]
+    p1_pts, p1_co2 = p1_result
     p2_pts, p2_co2 = p2_result
 
     print('p1 gets {}, p2 gets {}'.format(p1_pts, p2_pts))
@@ -266,10 +299,13 @@ def confirm(transaction_id):
         p2_name = r.hget('player:{}'.format(p2), 'name')
         push(p1_token,
              'Trade successful!',
-             '{} ({}) confirmed your transaction {}, so you gained {} points!'
-             .format(p2_name, p2, transaction_id, p1_pts))
+             '{} confirmed your transaction, so you gained {} points emitting '
+             '{} tons of CO₂, while {} gained {} points and emitted {} tons '
+             'of CO₂'
+             .format(p2_name, p1_pts, p1_co2, p2_name, p2_pts, p2_co2))
 
-    return jsonify({'success': True, 'points': p2_pts, 'co2': p2_co2})
+    return jsonify({'success': True, 'points': p2_pts, 'co2': p2_co2,
+                    'otherPoints': p1_pts, 'otherCo2': p1_co2})
 
 
 @app.route('/api/plant/<int:quantity>', methods=['POST'])

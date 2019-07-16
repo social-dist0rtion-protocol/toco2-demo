@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, FlatList, Image } from "react-native";
+import { StyleSheet, View, Text, FlatList, Image, Alert } from "react-native";
 import { getPlayerList, trade } from "../api";
 import { material } from "react-native-typography";
 import { NavigationScreenProps } from "react-navigation";
@@ -70,9 +70,27 @@ export const TradeScreen = (props: TradeProps) => {
 
   const keyExtractor = (item: Player) => item.id;
 
-  const doTrade = (id: string, dstPlayerName: string) => async () => {
+  const onTrade = (id: string, dstPlayerName: string) => () =>
+    Alert.alert(
+      "Fair trade? 🤨",
+      `Do you want to be fair with ${dstPlayerName}?`,
+      [
+        {
+          text: "No, exploit!",
+          style: "cancel",
+          onPress: doTrade(id, dstPlayerName, false)
+        },
+        { text: "Yes, be fair", onPress: doTrade(id, dstPlayerName, true) }
+      ]
+    );
+
+  const doTrade = (
+    id: string,
+    dstPlayerName: string,
+    beFair: boolean
+  ) => async () => {
     try {
-      const response = await trade(id);
+      const response = await trade(id, beFair);
       if (response.success) {
         showAlert(
           `Your transaction was created with id ${
@@ -93,9 +111,11 @@ export const TradeScreen = (props: TradeProps) => {
       <View style={styles.TouchableWrapper}>
         <Touchable
           style={styles.Touchable}
-          onPress={doTrade(item.id, item.name)}
+          onPress={onTrade(item.id, item.name)}
         >
-          <Text style={styles.Name}>{item.name}</Text>
+          <Text style={styles.Name} numberOfLines={1}>
+            {item.name}
+          </Text>
           <Text>
             💰 {item.balance} 🌫️ {item.co2} 🌳 {item.trees}
           </Text>

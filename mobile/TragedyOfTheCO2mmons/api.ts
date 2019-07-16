@@ -62,11 +62,11 @@ export const getRandomAvatar = async () =>
 
 export const getPlayerList = async () => fetchJson(() => get("/api/players"));
 
-export const trade = async (to: string) =>
-  fetchJson(() => post(`/api/trade?to=${to}`, {}, true));
+export const trade = async (to: string, fair: boolean) =>
+  fetchJson(() => post(`/api/trade?to=${to}`, { fair }, true));
 
-export const confirmTx = async (txId: string) =>
-  fetchJson(() => post(`/api/confirm/${txId}`, {}, true));
+export const confirmTx = async (txId: string, fair: boolean) =>
+  fetchJson(() => post(`/api/confirm/${txId}`, { fair }, true));
 
 export const plantTrees = async (quantity: number) =>
   fetchJson(() => post(`/api/plant/${quantity}`, {}, true));

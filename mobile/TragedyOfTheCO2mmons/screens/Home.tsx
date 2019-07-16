@@ -3,7 +3,7 @@ import { AsyncStorage, View, StyleSheet, RefreshControl } from "react-native";
 import Signup from "components/Signup";
 import { setJwt, setServer } from "../api";
 import Status from "components/Status";
-import Actions from "components/Actions";
+import Actions, { allStoredKeys } from "components/Actions";
 import Overlay from "components/Overlay";
 import { NavigationScreenProp } from "react-navigation";
 import { ScrollView } from "react-native-gesture-handler";
@@ -22,9 +22,14 @@ const HomeScreen = ({
   const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
-    Notifications.addListener(() => setRefreshing(true));
+    Notifications.addListener((notification: any) => {
+      setRefreshing(true);
+      if (notification.origin === "selected") {
+        Notifications.dismissNotificationAsync(notification.notificationId);
+      }
+    });
 
-    AsyncStorage.multiGet(["server", "jwt", "id", "name", "avatar"])
+    AsyncStorage.multiGet(allStoredKeys)
       .then(values => {
         values.forEach(keyValue => {
           const [key, value] = keyValue;

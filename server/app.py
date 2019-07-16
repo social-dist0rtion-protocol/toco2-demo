@@ -8,6 +8,7 @@ import json
 import jwt
 import os
 import time
+import math
 import uuid
 
 # ========================= SERVER SETUP JUNK =============================== #
@@ -36,9 +37,10 @@ player_required_fields = ['name', 'avatar', 'pushToken']
 score_keys = ['balances', 'emissions', 'trees']
 score_field_map = {'balances': 'balance', 'emissions': 'co2', 'trees': 'trees'}
 initial_scores = {'balances': 20, 'emissions': 0, 'trees': 0}
+stakes_enabled = True
 total_co2 = 0
 co2_per_tree = 1
-cooldown_secs = 60
+cooldown_secs = 10
 initial_co2 = 0
 initial_pts_per_trade = 10
 initial_co2_per_trade = 10
@@ -73,6 +75,7 @@ app.register_error_handler(Exception, handle_error)
 def reset_game():
     players = r.hkeys('players')
     pipe = r.pipeline()
+    pipe.set('stakes_enabled', str(stakes_enabled))
     pipe.set('co2', initial_co2)
     pipe.set('co2:tick', initial_co2_per_trade)
     pipe.set('pts:tick', initial_pts_per_trade)
@@ -107,6 +110,38 @@ def get_client_id():
     except:
         print('invalid jwt: {}'.format(raw_jwt))
         raise APIError('Invalid JWT', 401)
+
+
+def do_trade(p1, p2, transaction_id):
+    p1_k, p1_pts, p1_stake = p1
+    p2_k, p2_pts, p2_stake = p2
+
+    if abs(p1_pts - p2_pts) < 20:
+        max_pts = min_pts = 10
+    else:
+        diff = min(50, int(math.floor(abs(p1_pts - p2_pts))))
+        max_pts = int(math.floor(diff / 10) * 7)
+        min_pts = diff - max_pts
+
+    poorest = p1_k if p1_pts <= p2_pts else p2_k
+    richest = p1_k if p1_pts > p2_pts else p2_k
+
+    pipe = r.pipeline()
+    pipe.zincrby('balances', min_pts, poorest)
+    pipe.zincrby('emissions', min_pts, poorest)
+    pipe.zincrby('balances', max_pts, richest)
+    pipe.zincrby('emissions', max_pts, richest)
+
+    pipe.incrby('co2', min_pts + max_pts)
+    pipe.hset('tx:{}'.format(transaction_id), 'executed', 1)
+    pipe.hdel('player:{}:pending'.format(p2_k), transaction_id)
+    pipe.execute()
+
+    p1_result = max_pts if p1_k == richest else min_pts
+    p2_result = max_pts if p2_k == richest else min_pts
+
+    # co2 and points are the same
+    return ((p1_result, p1_result), (p2_result, p2_result))
 
 
 @app.route('/api/signup', methods=['POST'])
@@ -156,13 +191,22 @@ def trade():
         raise APIError('In cooldown period with player {}'.format(recipient),
                        429)
 
+    j = request.get_json()
+    if not j or 'stake' not in j:
+        if r.get('stakes_enabled') == 'True':
+            raise APIError('You must set a stake', 400)
+        else:
+            stake = 0
+    else:
+        stake = j['stake']
+
     r.setex('cooldown:{}:{}'.format(sender, recipient),
             cooldown_secs,
             int(time.time()))
 
     tx_id = uuid.uuid4().hex
     r.hmset('tx:{}'.format(tx_id),
-            {'from': player_from['id'], 'to': recipient})
+            {'from': player_from['id'], 'to': recipient, 'stake': stake})
 
     r.hmset('player:{}:pending'.format(recipient), {tx_id: int(time.time())})
 
@@ -177,30 +221,42 @@ def trade():
 @app.route('/api/confirm/<transaction_id>', methods=['POST'])
 def confirm(transaction_id):
     tx_key = 'tx:{}'.format(transaction_id)
-    tx = r.hmget(tx_key, 'from', 'to', 'executed')
+    tx = r.hmget(tx_key, 'from', 'to', 'executed', 'stake')
     if not tx:
         raise APIError('Unknown transaction', 422)
 
-    p1, p2, executed = tx
-    print('{} => {} tx {}, exec: {}'.format(p1, p2, transaction_id, executed))
+    j = request.get_json()
+    if not j or 'stake' not in j:
+        if r.get('stakes_enabled') == 'True':
+            raise APIError('You must set a stake', 400)
+        else:
+            p2_stake = None
+    else:
+        p2_stake = j['stake']
+
+    p1, p2, executed, p1_stake = tx
+
     if p2 != get_client_id() or executed == 1:
         raise APIError('Transaction already executed' if executed == 1
                        else 'Only {} can confirm this transaction'.format(p2),
                        403)
 
-    pts = int(r.get('pts:tick'))
-    co2 = int(r.get('co2:tick'))
+    print('{} => {} tx {}, exec: {}, p1_stake: {}, p2_stake: {}'
+          .format(p1, p2, transaction_id, executed, p1_stake, p2_stake))
 
     pipe = r.pipeline()
 
     for p in [p1, p2]:
-        pipe.zincrby('balances', pts, p)
-        pipe.zincrby('emissions', co2, p)
+        pipe.zscore('balances', p)
+    p1_b, p2_b = pipe.execute()
 
-    pipe.incrby('co2', 2 * pts)
-    pipe.hset(tx_key, 'executed', 1)
-    pipe.hdel('player:{}:pending'.format(p2), transaction_id)
-    pipe.execute()
+    p1_result, p2_result = do_trade((p1, int(p1_b), p1_stake),
+                                    (p2, int(p2_b), p2_stake),
+                                    transaction_id)
+    p1_pts = p1_result[0]
+    p2_pts, p2_co2 = p2_result
+
+    print('p1 gets {}, p2 gets {}'.format(p1_pts, p2_pts))
 
     p1_token = r.hget('player:{}'.format(p1), 'pushToken')
     if not p1_token:
@@ -211,9 +267,9 @@ def confirm(transaction_id):
         push(p1_token,
              'Trade successful!',
              '{} ({}) confirmed your transaction {}, so you gained {} points!'
-             .format(p2_name, p2, transaction_id, pts))
+             .format(p2_name, p2, transaction_id, p1_pts))
 
-    return jsonify({'success': True, 'points': pts, 'co2': co2})
+    return jsonify({'success': True, 'points': p2_pts, 'co2': p2_co2})
 
 
 @app.route('/api/plant/<int:quantity>', methods=['POST'])
@@ -301,6 +357,41 @@ def list_pending():
         transactions = OrderedDict(sorted(transactions.items(),
                                           key=lambda x: pending[x[0]]))
     return jsonify({'pending': transactions})
+
+
+@app.route('/api/leaderboard', methods=['GET'])
+def leaderboard():
+    pipe = r.pipeline()
+    for score_key in score_keys:
+        pipe.zrevrangebyscore(score_key, '+inf', '-inf',  withscores=True,
+                           score_cast_func=lambda x: int(x))
+    balances, emissions, trees = pipe.execute()
+    players = r.hgetall('players')
+    decoded = {k: json.loads(v) for k, v in players.items()}
+    return jsonify({'players': decoded, 'balances': balances,
+                    'emissions': emissions, 'trees': trees});
+
+
+@app.route('/leaderboard')
+def crappy_html_leaderboard():
+    pipe = r.pipeline()
+    for score_key in score_keys:
+        pipe.zrevrangebyscore(score_key, '+inf', '-inf',  withscores=True,
+                           score_cast_func=lambda x: int(x))
+    balances, emissions, trees = pipe.execute()
+    players = r.hgetall('players')
+    decoded = {k: json.loads(v) for k, v in players.items()}
+    b_list = ['<li><b>{}</b> - points: {}</li>'
+              .format(decoded[b[0]]['name'], b[1])
+              for b in balances]
+    e_list = ['<li><b>{}</b> - CO2: {}</li>'
+              .format(decoded[e[0]]['name'], e[1]) for e in emissions]
+    t_list = ['<li><b>{}</b> - trees: {}</li>'
+              .format(decoded[t[0]]['name'], t[1]) for t in trees]
+    return '<html><h3>points</h3><ol>{}</ol><h3>trees</h3><ol>{}</ol>' \
+           '<h3>emissions</h3><ol>{}</ol></html>'.format(''.join(b_list),
+                                                         ''.join(t_list),
+                                                         ''.join(e_list))
 
 
 @app.route('/api/private/reset', methods=['POST'])

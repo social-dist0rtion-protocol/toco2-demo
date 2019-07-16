@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, Image, FlatList } from "react-native";
+import { StyleSheet, View, Text, Image, FlatList, Alert } from "react-native";
 import { Player } from "../screens/Trade";
 import { material } from "react-native-typography";
 import { getPendingTransactions, confirmTx } from "../api";
@@ -46,6 +46,12 @@ export const ConfirmScreen = () => {
 
   const keyExtractor = (item: Transaction) => item.id;
 
+  const askConfirm = (txId: string, name: string) => () =>
+    Alert.alert("Please confirm", "Do you want to approve this transaction?", [
+      { text: "No", style: "cancel" },
+      { text: "Yes", onPress: doConfirm(txId, name) }
+    ]);
+
   const doConfirm = (txId: string, name: string) => async () => {
     try {
       const response = await confirmTx(txId);
@@ -58,7 +64,8 @@ export const ConfirmScreen = () => {
         doRefresh();
       } else {
         showAlert(
-          `Couldn't confirm tx ${txId} with ${name}: ${response.error} ☹️`
+          `Couldn't confirm tx ${txId} with ${name}: ${response.error ||
+            JSON.stringify(response)} ☹️`
         );
       }
     } catch (error) {
@@ -72,7 +79,7 @@ export const ConfirmScreen = () => {
       <View style={styles.TouchableWrapper}>
         <Touchable
           style={styles.Touchable}
-          onPress={doConfirm(item.id, item.from.name)}
+          onPress={askConfirm(item.id, item.from.name)}
         >
           <View>
             <Text style={styles.TransactionId}>{item.id}</Text>

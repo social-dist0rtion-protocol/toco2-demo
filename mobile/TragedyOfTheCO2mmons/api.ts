@@ -1,7 +1,7 @@
 import fetch_polyfill from "react-native-fetch-polyfill";
 
 const REQUEST_TIMEOUT = 10 * 1000;
-export const defaultServer = "https://d7110f04.eu.ngrok.io"; // local "http://192.168.0.11:5000";
+export const defaultServer = "https://31c79c70.eu.ngrok.io"; // local "http://192.168.0.11:5000";
 
 let auth = "";
 let server = defaultServer;

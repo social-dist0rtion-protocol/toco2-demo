@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, Platform } from "react-native";
 import { material, systemWeights } from "react-native-typography";
 import { getStatus } from "../api";
 import { NavigationScreenProps } from "react-navigation";
 import { Button, ButtonText } from "../styles";
 import Touchable from "components/Touchable";
+import { Notifications } from "expo";
 
 type StatusProps = {
   id: string;
@@ -42,6 +43,13 @@ const Status = (props: StatusProps) => {
 
   props.navigation.addListener("didFocus", _ => setRefreshStatus(true));
 
+  const onConfirm = () => {
+    props.navigation.navigate("Confirm");
+    if (Platform.OS === "android") {
+      Notifications.dismissAllNotificationsAsync();
+    }
+  };
+
   return (
     <View style={styles.Wrapper}>
       <Text style={styles.Welcome}>Welcome back, {props.name}!</Text>
@@ -60,14 +68,14 @@ const Status = (props: StatusProps) => {
           Your emissions:<Text style={styles.Bold}> {CO2} </Text>tons of CO₂
         </Text>
         <Text style={styles.StatusText}>
-          Current CO₂ levels:<Text style={styles.Bold}> {globalCO2} </Text>ppm
+          Global CO₂ levels:<Text style={styles.Bold}> {globalCO2} </Text>ppm
         </Text>
         <Text style={styles.StatusText}>
           Trees planted:<Text style={styles.Bold}> {trees}</Text>
         </Text>
         {pending.length ? (
           <View style={styles.ButtonWrapper}>
-            <Touchable onPress={() => props.navigation.navigate("Confirm")}>
+            <Touchable onPress={onConfirm}>
               <View style={styles.Button}>
                 <Text style={styles.ButtonText}>
                   {pending.length} pending tx

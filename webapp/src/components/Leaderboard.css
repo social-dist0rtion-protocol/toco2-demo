@@ -1,0 +1,19 @@
+.headers {
+  font-weight: 600;
+}
+
+.leaderboard h4:not(:first-child) {
+  margin-top: 1em;
+}
+
+.leaders {
+  background-color: rgba(195, 176, 145, 0.4);
+}
+
+.tree-huggers {
+  background-color: #d0f0c0;
+}
+
+.polluters {
+  background-color: #aaa;
+}

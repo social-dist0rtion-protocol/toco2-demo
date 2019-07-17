@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify, abort
 from flask_redis import FlaskRedis
+from flask_cors import CORS
 from push_notifications import push
 from collections import OrderedDict
 import json
@@ -23,6 +24,7 @@ webapp_folder = os.path.join(os.path.dirname(os.getcwd()), 'webapp', 'build')
 jwt_secret = 'I sure hope nobody can figure this out'
 
 app = Flask(__name__, static_folder=webapp_folder)
+CORS(app)
 app.config['REDIS_URL'] = REDIS_URL
 app.config['SECRET_KEY'] = "co2 it's easy as 1-2-2"
 app.config['JSON_AS_ASCII'] = False
@@ -43,10 +45,13 @@ cooldown_secs = 10
 initial_co2 = 0
 initial_pts_per_trade = 10
 initial_co2_per_trade = 10
-initial_pts_per_tree = 1
+initial_pts_per_tree = 3
 prisoners_dilemma_enabled = True
-pd_high_value = 10
-pd_low_value = 4
+pd_high_pts_value = 10
+pd_mid_pts_value = 3
+pd_low_pts_value = 1
+pd_high_co2_value = 100
+pd_low_co2_value = 1
 # =========================================================================== #
 
 
@@ -145,15 +150,15 @@ def trade_rich_wins(p1_k, p1_pts, p2_k, p2_pts, transaction_id):
 
 def trade_with_dilemma(p1_k, p1_fair, p2_k, p2_fair, transaction_id):
     if p1_fair:
-        p1_co2 = pd_low_value if p2_fair else pd_high_value
-        p1_pts = pd_low_value
-        p2_co2 = pd_low_value
-        p2_pts = pd_low_value if p2_fair else pd_high_value
+        p1_co2 = pd_low_co2_value
+        p1_pts = pd_mid_pts_value if p2_fair else pd_low_pts_value
+        p2_co2 = pd_low_co2_value if p2_fair else pd_high_co2_value
+        p2_pts = pd_mid_pts_value if p2_fair else pd_high_pts_value
     else:
-        p1_co2 = pd_low_value if p2_fair else pd_high_value
-        p1_pts = pd_high_value
-        p2_co2 = pd_high_value
-        p2_pts = pd_low_value if p2_fair else pd_high_value
+        p1_co2 = pd_high_co2_value
+        p1_pts = pd_high_pts_value if p2_fair else pd_low_pts_value
+        p2_co2 = pd_high_co2_value
+        p2_pts = pd_low_pts_value if p2_fair else pd_low_pts_value
 
     pipe = r.pipeline()
     pipe.zincrby('balances', p1_pts, p1_k)

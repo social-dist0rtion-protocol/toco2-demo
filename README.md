@@ -10,7 +10,7 @@ A Postman collection shows a list of calls that can be made to the server.
 
 ## Dependencies and running the backend
 
-To run the flask app you'll need to install [redis][https://redis.io/], and run
+To run the flask app you'll need to install [redis](https://redis.io/), and run
 the usual
 
     pip install -r requirements.txt

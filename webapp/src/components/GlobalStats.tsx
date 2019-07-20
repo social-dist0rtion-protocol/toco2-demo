@@ -107,10 +107,22 @@ const GlobalStats = (props: GlobalStatsProps) => {
                       {
                         type: "line",
                         mode: "horizontal",
-                        scaleID: "y-axis-0",
+                        scaleID: "value-axis",
                         value: 420000,
-                        borderColor: "red",
+                        borderColor: "rgba(253, 106, 2, 0.3)",
                         borderWidth: 2,
+                        label: {
+                          content: "Warning",
+                          enabled: true
+                        }
+                      },
+                      {
+                        type: "line",
+                        mode: "horizontal",
+                        scaleID: "value-axis",
+                        value: 1170000,
+                        borderColor: "red",
+                        borderWidth: 1,
                         label: {
                           content: "OMG",
                           enabled: true

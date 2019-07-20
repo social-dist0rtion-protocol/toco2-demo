@@ -1,31 +1,31 @@
-export const defaultServer = "https://31c79c70.eu.ngrok.io"; // local "http://192.168.0.11:5000";
+import LeapAPI from "./api-leap";
+import FlaskAPI from "./api-flask";
 
-let server = defaultServer;
+const useLeap = true;
+const proxy = useLeap ? LeapAPI : FlaskAPI;
+if (proxy) proxy.init();
 
-export const setServer = (newServer: string) => {
-  server = newServer;
+export const countries = {
+  usb: { id: 49155, name: "United States of Balloons" },
+  usa: { id: 49156, name: "United States of Ambrosia" }
 };
 
-const defaultHeaders = {
-  Accept: "application/json",
-  "Content-Type": "application/json"
-};
+export const countriesById = Object.entries(countries)
+  .map(([k, v]) => ({ id: v.id, value: k }))
+  .reduce(
+    (prev, current) => {
+      prev[current.id] = current.value;
+      return prev;
+    },
+    {} as {
+      [id: number]: string;
+    }
+  );
 
-const get = (url: string, externalServer: boolean = false) =>
-  fetch(externalServer ? url : `${server}${url}`, {
-    method: "GET",
-    headers: defaultHeaders
-  });
+export const setServer = proxy.setServer;
 
-const fetchJson = async (call: () => Promise<Response>) => {
-  const response = await call();
-  const json = await response.json();
-  return json;
-};
+export const getStatus = proxy.getStatus;
 
-export const getStatus = async () => fetchJson(() => get("/api/status"));
+export const getPlayerList = proxy.getPlayerList;
 
-export const getPlayerList = async () => fetchJson(() => get("/api/players"));
-
-export const getLeaderboard = async () =>
-  fetchJson(() => get("/api/leaderboard"));
+export const getLeaderboard = proxy.getLeaderboard;

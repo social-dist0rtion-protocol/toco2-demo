@@ -1,7 +1,7 @@
 import React from "react";
 import { Col, Row } from "react-bootstrap";
 import "./Sustainability.css";
-import { Player } from "../App";
+import { Player } from "../types";
 
 type SustainabilityProps = {
   players: Player[];

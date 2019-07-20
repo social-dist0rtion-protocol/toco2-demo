@@ -4,41 +4,43 @@ import Leaderboard from "./components/Leaderboard";
 import GlobalStats from "./components/GlobalStats";
 import Sustainability from "./components/Sustainability";
 import { useInterval } from "./effects";
-import { getLeaderboard } from "./api";
-
-export type Player = {
-  avatar: string;
-  name: string;
-  event: string;
-};
+import { getLeaderboard, countries } from "./api";
+import { LeaderboardResponse } from "./types";
 
 const App: React.FC = () => {
-  const [players, setPlayers] = useState<{ [id: string]: Player }>({});
-  const [balances, setBalances] = useState<Array<[string, number]>>([]);
-  const [trees, setTrees] = useState<Array<[string, number]>>([]);
-  const [emissions, setEmissions] = useState<Array<[string, number]>>([]);
+  const [players, setPlayers] = useState<LeaderboardResponse["players"]>({});
+  const [trees, setTrees] = useState<LeaderboardResponse["trees"]>([]);
+  const [emissions, setEmissions] = useState<LeaderboardResponse["emissions"]>(
+    []
+  );
+  const [emissionsByCountry, setEmissionsByCountry] = useState<
+    LeaderboardResponse["emissionsByCountry"]
+  >({});
+  const [treesByCountry, setTreesByCountry] = useState<
+    LeaderboardResponse["treesByCountry"]
+  >({});
 
   useInterval(async () => {
     const response = await getLeaderboard();
     setPlayers(response.players);
-    setBalances(response.balances);
     setTrees(response.trees);
     setEmissions(response.emissions);
-  }, 2000);
+    setTreesByCountry(response.treesByCountry);
+    setEmissionsByCountry(response.emissionsByCountry);
+  }, 5000);
 
   return (
     <Container fluid>
       <Row>
         <Col>
-          <Leaderboard
-            players={players}
-            balances={balances}
-            trees={trees}
-            emissions={emissions}
-          />
+          <Leaderboard players={players} trees={trees} emissions={emissions} />
         </Col>
         <Col xs={6}>
-          <GlobalStats />
+          <GlobalStats
+            countries={countries}
+            emissionsByCountry={emissionsByCountry}
+            treesByCountry={treesByCountry}
+          />
         </Col>
         <Col>
           <Sustainability />

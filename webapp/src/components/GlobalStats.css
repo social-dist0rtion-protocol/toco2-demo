@@ -1,3 +1,14 @@
 .global-stats {
   background-color: rgba(80, 200, 120, 0.1);
+  padding: 1em;
+}
+
+.current {
+  font-size: larger;
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+.bold {
+  font-weight: 600;
 }

@@ -19,20 +19,20 @@ const Leader = ({ player, balance }: { player: Player; balance: number }) => (
 
 const Leaderboard = (props: LeaderboardProps) => (
   <div className="leaderboard">
-    <h4>Tree huggerz</h4>
+    <h4>Best planters</h4>
     <Row className="tree-huggers" noGutters>
       <Col>
         <Row className="headers" noGutters>
           <Col xs={6}>name</Col>
-          <Col>trees</Col>
+          <Col>CO₂</Col>
           <Col>event</Col>
         </Row>
-        {props.trees.map(t => (
+        {props.trees.slice(0, 10).map(t => (
           <Leader key={t[0]} player={props.players[t[0]]} balance={t[1]} />
         ))}
       </Col>
     </Row>
-    <h4>Polluters</h4>
+    <h4>Worst polluters</h4>
     <Row className="polluters" noGutters>
       <Col>
         <Row className="headers" noGutters>
@@ -40,7 +40,7 @@ const Leaderboard = (props: LeaderboardProps) => (
           <Col>CO₂</Col>
           <Col>event</Col>
         </Row>
-        {props.emissions.map(e => (
+        {props.emissions.slice(0, 10).map(e => (
           <Leader key={e[0]} player={props.players[e[0]]} balance={e[1]} />
         ))}
       </Col>

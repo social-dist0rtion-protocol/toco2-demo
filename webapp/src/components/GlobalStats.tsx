@@ -8,7 +8,6 @@ import "chartjs-plugin-annotation";
 type GlobalStatsProps = {
   emissionsByCountry: LeaderboardResponse["emissionsByCountry"];
   treesByCountry: LeaderboardResponse["treesByCountry"];
-  countries: { [countryId: string]: Country };
 };
 
 const byCountryToGlobal = (byCountry: { [countryId: string]: number }) =>
@@ -69,11 +68,13 @@ const GlobalStats = (props: GlobalStatsProps) => {
                 data={{
                   labels: co2.times,
                   datasets: [
-                    { label: "CO2 (Mt)", data: co2.values, pointBorderWidth: 0 }
+                    { label: "CO₂ (Mt)", data: co2.values, pointBorderWidth: 0 }
                   ]
                 }}
                 options={{
                   animation: { duration: 0 },
+                  showLine: true,
+                  cubicInterpolationMode: "monotone",
                   scales: {
                     xAxes: [
                       {
@@ -112,8 +113,9 @@ const GlobalStats = (props: GlobalStatsProps) => {
                         borderColor: "rgba(253, 106, 2, 0.3)",
                         borderWidth: 2,
                         label: {
-                          content: "Warning",
-                          enabled: true
+                          content: "+1.5°C",
+                          enabled: true,
+                          backgroundColor: "rgba(253, 106, 2, 0.7)"
                         }
                       },
                       {
@@ -124,8 +126,9 @@ const GlobalStats = (props: GlobalStatsProps) => {
                         borderColor: "red",
                         borderWidth: 1,
                         label: {
-                          content: "OMG",
-                          enabled: true
+                          content: "+2°C",
+                          enabled: true,
+                          backgroundColor: "rgba(255, 0, 0, 0.7)"
                         }
                       }
                     ]
@@ -135,6 +138,15 @@ const GlobalStats = (props: GlobalStatsProps) => {
                 height={300}
                 redraw
               />
+            </Col>
+          </Row>
+          <Row className="current">
+            <Col>
+              Current CO₂ levels:{" "}
+              <span className="bold">
+                {co2.values.length ? co2.values[co2.values.length - 1] : 0}
+              </span>{" "}
+              Mt
             </Col>
           </Row>
         </Col>

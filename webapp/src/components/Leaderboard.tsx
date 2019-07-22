@@ -11,7 +11,7 @@ type LeaderboardProps = {
 
 const Leader = ({ player, balance }: { player: Player; balance: number }) => (
   <Row noGutters>
-    <Col xs={6}>{player.name}</Col>
+    <Col xs={6}>{player.name || "Anonymous"}</Col>
     <Col>{balance}</Col>
     <Col>{player.event}</Col>
   </Row>
@@ -25,7 +25,7 @@ const Leaderboard = (props: LeaderboardProps) => (
         <Row className="headers" noGutters>
           <Col xs={6}>name</Col>
           <Col>CO₂</Col>
-          <Col>event</Col>
+          <Col>country</Col>
         </Row>
         {props.trees.slice(0, 10).map(t => (
           <Leader key={t[0]} player={props.players[t[0]]} balance={t[1]} />
@@ -38,7 +38,7 @@ const Leaderboard = (props: LeaderboardProps) => (
         <Row className="headers" noGutters>
           <Col xs={6}>name</Col>
           <Col>CO₂</Col>
-          <Col>event</Col>
+          <Col>country</Col>
         </Row>
         {props.emissions.slice(0, 10).map(e => (
           <Leader key={e[0]} player={props.players[e[0]]} balance={e[1]} />

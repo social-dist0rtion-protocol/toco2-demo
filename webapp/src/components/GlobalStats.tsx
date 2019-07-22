@@ -15,7 +15,9 @@ type TimeSeries = {
   values: number[];
 };
 
-const COMPACT_INTERVAL_SECONDS = 60;
+// we don't show consecutive CO₂ points with the same value, unless they're
+// this many seconds apart from each other
+const MAX_INTERVAL_NO_PTS_SECONDS = 60;
 
 const byCountryToGlobal = (byCountry: { [countryId: string]: number }) =>
   Object.values(byCountry).reduce((prev, current) => prev + current, 0);
@@ -25,76 +27,9 @@ const GlobalStats = (props: GlobalStatsProps) => {
   const [co2, setCO2] = useState<TimeSeries>({ times: [], values: [] });
   const [trees, setTrees] = useState<TimeSeries>({ times: [], values: [] });
   const [netCO2, setNetCO2] = useState<TimeSeries>({ times: [], values: [] });
-  const [lastCompacted, setLastCompacted] = useState(new Date(0));
+  const [lastPointAddedTime, setPointAddedTime] = useState(new Date(0));
 
-  const computeNetCO2 = (co2Points: TimeSeries, treePoints: TimeSeries) => {
-    const initialNetCO2: TimeSeries = { times: [], values: [] };
-
-    maybeCompactPoints(co2Points, treePoints);
-
-    for (
-      let i = 0;
-      i < Math.min(co2Points.values.length, treePoints.values.length);
-      i++
-    ) {
-      initialNetCO2.times.push(co2.times[i]);
-      initialNetCO2.values.push(co2.values[i] - trees.values[i]);
-    }
-
-    setNetCO2(initialNetCO2);
-  };
-
-  const maybeCompactPoints = (
-    co2Points: TimeSeries,
-    treePoints: TimeSeries
-  ) => {
-    // TODO instead of doing this, always compare the latest values
-    // with the previous ones, and only keep the latest point
-    // in case values didn't change
-    if (
-      !co2Points.values.length ||
-      !treePoints.values.length ||
-      new Date().getTime() - lastCompacted.getTime() <=
-        COMPACT_INTERVAL_SECONDS * 1000
-    )
-      return;
-
-    const newCO2: TimeSeries = { times: [], values: [] };
-    const newTrees: TimeSeries = { times: [], values: [] };
-
-    let lastCO2 = -666;
-    let lastTrees = -666;
-
-    for (
-      let i = 0;
-      i < Math.min(co2Points.values.length, treePoints.values.length) - 1;
-      i++
-    ) {
-      const co2Value = co2Points.values[i];
-      const treesValue = treePoints.values[i];
-
-      if (co2Value !== lastCO2 || treesValue !== lastTrees) {
-        newCO2.times.push(co2Points.times[i]);
-        newTrees.times.push(treePoints.times[i]);
-        newCO2.values.push(co2Value);
-        newTrees.values.push(treesValue);
-        lastCO2 = co2Value;
-        lastTrees = treesValue;
-      }
-    }
-
-    newCO2.times.push(co2Points.times[co2Points.times.length - 1]);
-    newTrees.times.push(treePoints.times[treePoints.times.length - 1]);
-    newCO2.values.push(co2Points.values[co2Points.values.length - 1]);
-    newTrees.values.push(treePoints.values[treePoints.values.length - 1]);
-
-    setLastCompacted(new Date());
-    setCO2(newCO2);
-    setTrees(newTrees);
-  };
-
-  // fetch previous data on startup, if we had any
-  useEffect(() => {
+  const loadFromLocalStorage = () => {
     const co2: TimeSeries = JSON.parse(
       localStorage.getItem("co2") || '{"times":[],"values":[]}'
     );
@@ -102,10 +37,90 @@ const GlobalStats = (props: GlobalStatsProps) => {
       localStorage.getItem("trees") || '{"times":[],"values":[]}'
     );
 
-    maybeCompactPoints(co2, trees);
-    setLocalStorageLoaded(true);
-  }, []);
+    const initialNetCO2: TimeSeries = { times: [], values: [] };
 
+    if (co2.values.length && trees.values.length) {
+      // always display the oldest point
+      initialNetCO2.times.push(co2.times[0]);
+      initialNetCO2.values.push(co2.values[0] - trees.values[0]);
+
+      // trees and co2 should always have the same length, but...
+      const maxLength = Math.min(co2.values.length, trees.values.length);
+      let lastNetCO2 = -666;
+
+      // compact values (don't display 2 consecutive points with the same value)
+      for (let i = 1; i < maxLength - 1; i++) {
+        const net = co2.values[i] - trees.values[i];
+        if (net !== lastNetCO2) {
+          initialNetCO2.times.push(co2.times[i]);
+          initialNetCO2.values.push(net);
+          lastNetCO2 = net;
+        }
+      }
+
+      // always display the latest point
+      const last = co2.values[maxLength - 1] - trees.values[maxLength - 1];
+      const lastTime = co2.times[maxLength - 1];
+
+      // we want at least 2 points; if latest === last, replace it
+      if (last === lastNetCO2 && maxLength > 2) {
+        initialNetCO2.times[initialNetCO2.times.length - 1] = lastTime;
+        initialNetCO2.values[initialNetCO2.values.length - 1] = last;
+      } else {
+        initialNetCO2.times.push(lastTime);
+        initialNetCO2.values.push(last);
+      }
+    }
+
+    setCO2(co2);
+    setTrees(trees);
+    setPointAddedTime(
+      initialNetCO2.times.length
+        ? new Date(initialNetCO2.times[initialNetCO2.times.length - 1])
+        : new Date(0)
+    );
+    setNetCO2(initialNetCO2);
+    setLocalStorageLoaded(true);
+  };
+
+  const updateNetCO2 = () => {
+    if (co2.values.length > 1 && trees.values.length > 1) {
+      const [latestCO2] = co2.values.slice(-1);
+      const [latestTrees] = trees.values.slice(-1);
+      const now = new Date();
+      const newNetCO2 = latestCO2 - latestTrees;
+      const latestNetCO2 = netCO2.values[netCO2.values.length - 1];
+      console.log(
+        `time since last update: ${(now.valueOf() -
+          lastPointAddedTime.valueOf()) /
+          1000}`
+      );
+      if (
+        !netCO2.values.length ||
+        newNetCO2 !== latestNetCO2 ||
+        (now.valueOf() - lastPointAddedTime.valueOf()) / 1000 >
+          MAX_INTERVAL_NO_PTS_SECONDS
+      ) {
+        setNetCO2({
+          times: [...netCO2.times, now],
+          values: [...netCO2.values, newNetCO2]
+        });
+        setPointAddedTime(new Date());
+      } else if (newNetCO2 === latestNetCO2) {
+        // replace the latest value with the new one
+        const netCO2TimesCopy = [...netCO2.times];
+        const netCO2ValuesCopy = [...netCO2.values];
+        netCO2TimesCopy[netCO2TimesCopy.length - 1] = now;
+        netCO2ValuesCopy[netCO2ValuesCopy.length - 1] = newNetCO2;
+        setNetCO2({ times: netCO2TimesCopy, values: netCO2ValuesCopy });
+      }
+    }
+  };
+
+  // fetch previous data on startup, if we had any
+  useEffect(loadFromLocalStorage, []);
+
+  // update CO2 and trees whenever we fetch new values
   useEffect(() => {
     if (localStorageLoaded) {
       const globalCO2 = byCountryToGlobal(props.emissionsByCountry);
@@ -116,7 +131,8 @@ const GlobalStats = (props: GlobalStatsProps) => {
       };
       setCO2(newCO2);
       localStorage.setItem("co2", JSON.stringify(newCO2));
-      if (co2.values.length === trees.values.length) computeNetCO2(co2, trees);
+      // we might have been noticed of a new CO2 value, but not yet of trees
+      if (co2.values.length === trees.values.length) updateNetCO2();
     }
   }, [props.emissionsByCountry]);
 
@@ -130,7 +146,8 @@ const GlobalStats = (props: GlobalStatsProps) => {
       };
       setTrees(newTrees);
       localStorage.setItem("trees", JSON.stringify(newTrees));
-      if (co2.values.length === trees.values.length) computeNetCO2(co2, trees);
+      // we might have been noticed of a new trees value, but not yet of CO2
+      if (co2.values.length === trees.values.length) updateNetCO2();
     }
   }, [props.treesByCountry]);
 
@@ -164,7 +181,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
                         display: true,
                         gridLines: { display: false },
                         ticks: {
-                          source: "data",
+                          source: "auto",
                           beginAtZero: false,
                           autoSkip: true
                         },

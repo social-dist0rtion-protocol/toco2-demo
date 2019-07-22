@@ -41,7 +41,7 @@ const Sustainability = (props: SustainabilityProps) => {
               animation: { duration: 0 },
               scales: {
                 xAxes: [{ barPercentage: 0.5, ticks: { fonSize: 24 } }],
-                yAxes: [{ ticks: { suggestedMin: 0, suggestedMax: 1 } }]
+                yAxes: [{ ticks: { suggestedMin: 0 } }]
               }
             }}
             width={200}

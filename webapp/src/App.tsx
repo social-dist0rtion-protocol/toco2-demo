@@ -44,6 +44,11 @@ const App: React.FC = () => {
     <Container className="app" fluid>
       <Row>
         <Col>
+          <h1>🌳 Tragedy of the CO₂mmons 🌳</h1>
+        </Col>{" "}
+      </Row>
+      <Row>
+        <Col>
           <Leaderboard players={players} trees={trees} emissions={emissions} />
         </Col>
         <Col xs={6}>

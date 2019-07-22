@@ -84,17 +84,13 @@ const GlobalStats = (props: GlobalStatsProps) => {
   };
 
   const updateNetCO2 = () => {
+    // we want to always have at least 2 points (one at (0,0), and the latest)
     if (co2.values.length > 1 && trees.values.length > 1) {
       const [latestCO2] = co2.values.slice(-1);
       const [latestTrees] = trees.values.slice(-1);
       const now = new Date();
       const newNetCO2 = latestCO2 - latestTrees;
       const latestNetCO2 = netCO2.values[netCO2.values.length - 1];
-      console.log(
-        `time since last update: ${(now.valueOf() -
-          lastPointAddedTime.valueOf()) /
-          1000}`
-      );
       if (
         !netCO2.values.length ||
         newNetCO2 !== latestNetCO2 ||
@@ -131,7 +127,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
       };
       setCO2(newCO2);
       localStorage.setItem("co2", JSON.stringify(newCO2));
-      // we might have been noticed of a new CO2 value, but not yet of trees
+      // we might have been notified of a new CO2 value, but not yet of trees
       if (co2.values.length === trees.values.length) updateNetCO2();
     }
   }, [props.emissionsByCountry]);
@@ -146,7 +142,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
       };
       setTrees(newTrees);
       localStorage.setItem("trees", JSON.stringify(newTrees));
-      // we might have been noticed of a new trees value, but not yet of CO2
+      // we might have been notifid of a new trees value, but not yet of CO2
       if (co2.values.length === trees.values.length) updateNetCO2();
     }
   }, [props.treesByCountry]);

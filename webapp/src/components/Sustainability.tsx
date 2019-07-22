@@ -33,7 +33,7 @@ const Sustainability = (props: SustainabilityProps) => {
                 {
                   label: "sustainability index",
                   data,
-                  backgroundColor: "rgba(255, 0, 0, 0.5)"
+                  backgroundColor: "rgba(80, 200, 120, 0.9)"
                 }
               ]
             }}

@@ -2,6 +2,7 @@ import React from "react";
 import { Col, Row } from "react-bootstrap";
 import "./Leaderboard.css";
 import { Player } from "../types";
+import numeral from "numeral";
 
 type LeaderboardProps = {
   players: { [id: string]: Player };
@@ -11,20 +12,22 @@ type LeaderboardProps = {
 
 const Leader = ({ player, balance }: { player: Player; balance: number }) => (
   <Row noGutters>
-    <Col xs={6}>{player.name || "Anonymous"}</Col>
-    <Col>{balance}</Col>
+    <Col xs={6} className="player-name">
+      {player.name || "Anonymous"}
+    </Col>
+    <Col>{numeral(balance).format("0a")}</Col>
     <Col>{player.event}</Col>
   </Row>
 );
 
 const Leaderboard = (props: LeaderboardProps) => (
   <div className="leaderboard">
-    <h4>Best planters</h4>
+    <h4>Best planters - CO₂ locked</h4>
     <Row className="tree-huggers" noGutters>
       <Col>
         <Row className="headers" noGutters>
           <Col xs={6}>name</Col>
-          <Col>CO₂</Col>
+          <Col>CO₂ (Mt)</Col>
           <Col>country</Col>
         </Row>
         {props.trees.slice(0, 10).map(t => (
@@ -32,12 +35,12 @@ const Leaderboard = (props: LeaderboardProps) => (
         ))}
       </Col>
     </Row>
-    <h4>Worst polluters</h4>
+    <h4>Worst polluters - CO₂ emitted</h4>
     <Row className="polluters" noGutters>
       <Col>
         <Row className="headers" noGutters>
           <Col xs={6}>name</Col>
-          <Col>CO₂</Col>
+          <Col>CO₂ (Mt)</Col>
           <Col>country</Col>
         </Row>
         {props.emissions.slice(0, 10).map(e => (

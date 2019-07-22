@@ -19,3 +19,9 @@
   background-color: #aaa;
   padding: 1em;
 }
+
+.player-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

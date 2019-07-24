@@ -47,13 +47,13 @@ const GlobalStats = (props: GlobalStatsProps) => {
 
     const initialNetCO2: TimeSeries = { times: [], values: [] };
 
+    // trees and co2 should always have the same length, but...
+    const maxLength = Math.min(co2.values.length, trees.values.length);
+
     if (co2.values.length && trees.values.length) {
       // always display the oldest point
       initialNetCO2.times.push(co2.times[0]);
       initialNetCO2.values.push(co2.values[0] - trees.values[0]);
-
-      // trees and co2 should always have the same length, but...
-      const maxLength = Math.min(co2.values.length, trees.values.length);
       let lastNetCO2 = -666;
 
       // compact values (don't display 2 consecutive points with the same value)
@@ -80,8 +80,14 @@ const GlobalStats = (props: GlobalStatsProps) => {
       }
     }
 
-    setCO2(co2);
-    setTrees(trees);
+    setCO2({
+      times: co2.times.slice(0, maxLength),
+      values: co2.values.slice(0, maxLength)
+    });
+    setTrees({
+      times: trees.times.slice(0, maxLength),
+      values: trees.values.slice(0, maxLength)
+    });
     setPointAddedTime(
       initialNetCO2.times.length
         ? new Date(initialNetCO2.times[initialNetCO2.times.length - 1])
@@ -99,11 +105,12 @@ const GlobalStats = (props: GlobalStatsProps) => {
       const now = new Date();
       const newNetCO2 = latestCO2 - latestTrees;
       const latestNetCO2 = netCO2.values[netCO2.values.length - 1];
+      const secondsSinceLastAdd =
+        (now.valueOf() - lastPointAddedTime.valueOf()) / 1000;
       if (
         !netCO2.values.length ||
         newNetCO2 !== latestNetCO2 ||
-        (now.valueOf() - lastPointAddedTime.valueOf()) / 1000 >
-          MAX_INTERVAL_NO_PTS_SECONDS
+        secondsSinceLastAdd > MAX_INTERVAL_NO_PTS_SECONDS
       ) {
         setNetCO2({
           times: [...netCO2.times, now],

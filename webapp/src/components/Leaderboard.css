@@ -7,16 +7,16 @@
 }
 
 .leaders {
-  background-color: rgba(195, 176, 145, 0.4);
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .tree-huggers {
-  background-color: rgba(97, 198, 47, 0.3);
+  background-color: rgba(0, 0, 0, 0.6);
   padding: 1em;
 }
 
 .polluters {
-  background-color: rgba(255, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.6);
   padding: 1em;
 }
 

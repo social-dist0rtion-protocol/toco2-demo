@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
-import { Line } from "react-chartjs-2";
+import { Line, defaults } from "react-chartjs-2";
 import { LeaderboardResponse } from "../types";
 import "./GlobalStats.css";
 import "chartjs-plugin-annotation";
+
+const ChartConf = (defaults as any).global;
+
+ChartConf.elements.point.backgroundColor = "rgba(255, 255, 255, 0.8)";
+ChartConf.elements.point.borderColor = "rgba(255, 255, 255, 0.8)";
+ChartConf.elements.line.borderColor = "rgba(255, 255, 255, 0.8)";
+ChartConf.elements.line.borderColor = "rgba(255, 255, 255, 0.8)";
+ChartConf.legend.labels.fontColor = "rgba(255, 255, 255, 0.8)";
 
 type GlobalStatsProps = {
   emissionsByCountry: LeaderboardResponse["emissionsByCountry"];
@@ -161,7 +169,8 @@ const GlobalStats = (props: GlobalStatsProps) => {
                     {
                       label: "CO₂ (Mt)",
                       data: netCO2.values,
-                      pointBorderWidth: 0
+                      pointBorderWidth: 0,
+                      backgroundColor: "rgba(255, 255, 255, 0.2)"
                     }
                   ]
                 }}
@@ -175,12 +184,17 @@ const GlobalStats = (props: GlobalStatsProps) => {
                         id: "time-axis",
                         type: "time",
                         display: true,
-                        gridLines: { display: false },
+                        gridLines: {
+                          display: false,
+                          color: "rgba(255, 255, 255, 0.6)"
+                        },
                         ticks: {
                           source: "auto",
                           beginAtZero: false,
-                          autoSkip: true
+                          autoSkip: true,
+                          fontColor: "rgba(255, 255, 255, 0.8)"
                         },
+                        scaleLabel: "rgba(255, 255, 255, 0.8)",
                         time: { unit: "second", round: "second" }
                       }
                     ],
@@ -188,10 +202,15 @@ const GlobalStats = (props: GlobalStatsProps) => {
                       {
                         id: "value-axis",
                         type: "linear",
+                        scaleLabel: "rgba(255, 255, 255, 0.8)",
+                        gridLines: {
+                          color: "rgba(255, 255, 255, 0.2)"
+                        },
                         ticks: {
                           suggestedMax: 1300000,
                           suggestedMin: 0,
-                          beginAtZero: true
+                          beginAtZero: true,
+                          fontColor: "rgba(255, 255, 255, 0.8)"
                         }
                       }
                     ]

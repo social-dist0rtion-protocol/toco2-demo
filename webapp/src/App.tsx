@@ -44,7 +44,15 @@ const App: React.FC = () => {
     <Container className="app" fluid>
       <Row>
         <Col>
-          <h1>🌳 Tragedy of the CO₂mmons 🌳</h1>
+          <h1>
+            <span role="img" aria-label="globe">
+              🌍
+            </span>{" "}
+            Tragedy of the CO₂mmons{" "}
+            <span role="img" aria-label="globe">
+              🌳
+            </span>
+          </h1>
         </Col>{" "}
       </Row>
       <Row>

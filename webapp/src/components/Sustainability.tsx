@@ -33,15 +33,38 @@ const Sustainability = (props: SustainabilityProps) => {
                 {
                   label: "sustainability index",
                   data,
-                  backgroundColor: "rgba(80, 200, 120, 0.9)"
+                  backgroundColor: "rgba(80, 200, 120, 0.6)"
                 }
               ]
             }}
             options={{
               animation: { duration: 0 },
               scales: {
-                xAxes: [{ barPercentage: 0.5, ticks: { fonSize: 24 } }],
-                yAxes: [{ ticks: { suggestedMin: 0 } }]
+                xAxes: [
+                  {
+                    barPercentage: 0.5,
+                    scaleLabel: "rgba(255, 255, 255, 0.8)",
+                    gridLines: {
+                      color: "rgba(255, 255, 255, 0.4)"
+                    },
+                    ticks: {
+                      fontSize: 16,
+                      fontColor: "rgba(255, 255, 255, 0.8)"
+                    }
+                  }
+                ],
+                yAxes: [
+                  {
+                    scaleLabel: "rgba(255, 255, 255, 0.8)",
+                    gridLines: {
+                      color: "rgba(255, 255, 255, 0.2)"
+                    },
+                    ticks: {
+                      suggestedMin: 0,
+                      fontColor: "rgba(255, 255, 255, 0.8)"
+                    }
+                  }
+                ]
               }
             }}
             width={200}

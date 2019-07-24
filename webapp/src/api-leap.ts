@@ -8,7 +8,9 @@ let web3Backend = "https://testnet-node.leapdao.org";
 
 const playersAddresses = [
   // @vrde
-  // "0x197970E48082CD46f277ABDb8afe492bCCd78300",
+  "0x197970E48082CD46f277ABDb8afe492bCCd78300",
+  // @tim
+  "0xd3a3d22b832d91107f91309b560734bd12057531",
   // usa
   "0x752daE9A359CEc1efe0035E85C54c78312B08b61",
   "0xbdDe904D7592f686b6835E031A62118c7a0db715",

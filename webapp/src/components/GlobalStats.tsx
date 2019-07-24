@@ -1,3 +1,4 @@
+import numeral from "numeral";
 import React, { useState, useEffect } from "react";
 import { Col, Row } from "react-bootstrap";
 import { Line, defaults } from "react-chartjs-2";
@@ -162,6 +163,13 @@ const GlobalStats = (props: GlobalStatsProps) => {
     }
   }, [props.treesByCountry]);
 
+  const getBeerPrice = () => {
+    if (!netCO2.values.length) return "2.00";
+    const currentCO2 = netCO2.values[netCO2.values.length - 1];
+    const price = Math.max(2, 2 + (currentCO2 - 420000) * 0.005 * 0.001);
+    return numeral(price).format("0.00");
+  };
+
   return (
     <>
       <h4>Global emissions</h4>
@@ -269,6 +277,12 @@ const GlobalStats = (props: GlobalStatsProps) => {
                   : 0}
               </span>{" "}
               Mt
+            </Col>
+          </Row>
+          <Row className="beer">
+            <Col>
+              Current beer price:{" "}
+              <span className="bold">₲{getBeerPrice()}</span>
             </Col>
           </Row>
         </Col>

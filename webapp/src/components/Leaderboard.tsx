@@ -12,7 +12,7 @@ type LeaderboardProps = {
 
 const Leader = ({ player, balance }: { player: Player; balance: number }) => (
   <Row noGutters>
-    <Col xs={6} className="player-name">
+    <Col xs={8} className="player-name">
       {player.name || "Anonymous"}
     </Col>
     <Col>{numeral(balance).format("0a")}</Col>
@@ -26,7 +26,7 @@ const Leaderboard = (props: LeaderboardProps) => (
     <Row className="tree-huggers" noGutters>
       <Col>
         <Row className="headers" noGutters>
-          <Col xs={6}>name</Col>
+          <Col xs={8}>name</Col>
           <Col>CO₂ (Mt)</Col>
           <Col>country</Col>
         </Row>
@@ -39,7 +39,7 @@ const Leaderboard = (props: LeaderboardProps) => (
     <Row className="polluters" noGutters>
       <Col>
         <Row className="headers" noGutters>
-          <Col xs={6}>name</Col>
+          <Col xs={8}>name</Col>
           <Col>CO₂ (Mt)</Col>
           <Col>country</Col>
         </Row>

@@ -6,6 +6,10 @@ import { LeaderboardResponse } from "../types";
 import "./GlobalStats.css";
 import "chartjs-plugin-annotation";
 
+export const MIN_THRESHOLD = 420000;
+export const MAX_THRESHOLD = 1170000;
+const MAX_Y = 1300000;
+
 const ChartConf = (defaults as any).global;
 
 ChartConf.elements.point.backgroundColor = "rgba(255, 255, 255, 0.8)";
@@ -166,7 +170,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
   const getBeerPrice = () => {
     if (!netCO2.values.length) return "2.00";
     const currentCO2 = netCO2.values[netCO2.values.length - 1];
-    const price = Math.max(2, 2 + (currentCO2 - 420000) * 0.005 * 0.001);
+    const price = Math.max(2, 2 + (currentCO2 - MIN_THRESHOLD) * 0.005 * 0.001);
     return numeral(price).format("0.00");
   };
 
@@ -222,7 +226,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
                           color: "rgba(255, 255, 255, 0.2)"
                         },
                         ticks: {
-                          suggestedMax: 1300000,
+                          suggestedMax: MAX_Y,
                           suggestedMin: 0,
                           beginAtZero: true,
                           fontColor: "rgba(255, 255, 255, 0.8)"
@@ -237,7 +241,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
                         type: "line",
                         mode: "horizontal",
                         scaleID: "value-axis",
-                        value: 420000,
+                        value: MIN_THRESHOLD,
                         borderColor: "rgba(253, 106, 2, 0.3)",
                         borderWidth: 2,
                         label: {
@@ -250,7 +254,7 @@ const GlobalStats = (props: GlobalStatsProps) => {
                         type: "line",
                         mode: "horizontal",
                         scaleID: "value-axis",
-                        value: 1170000,
+                        value: MAX_THRESHOLD,
                         borderColor: "red",
                         borderWidth: 1,
                         label: {

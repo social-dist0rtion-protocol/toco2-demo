@@ -13,12 +13,6 @@ type Passport = {
   trees: number;
 };
 
-type Player = {
-  avatar: string;
-  name: string;
-  event: string;
-};
-
 const parseTrees = (data: string) =>
   Web3.utils.hexToNumber(`0x${data.substring(50, 58)}`);
 
@@ -45,18 +39,20 @@ const getLeaderboard = async () => {
     value: []
   }));
 
+  console.log(`Getting passports for ${playersAddresses.length} player(s)...`);
+
   for (const promise of promises) {
     try {
       promise.value = await promise.task;
     } catch (error) {
-      console.log(`error while fetching unspent of ${promise.id}: ${error}`);
+      console.error(`error while fetching unspent of ${promise.id}: ${error}`);
       promise.value = [];
     }
   }
 
-  const passports: Passport[] = promises
+  const passports = promises
     .filter(p => p.value)
-    .flatMap(p =>
+    .map(p =>
       p
         .value!.map(u => u.output)
         .filter(o => countriesById[o.color])
@@ -66,7 +62,16 @@ const getLeaderboard = async () => {
           co2: parseCO2(o.data!),
           trees: parseTrees(o.data!)
         }))
+    )
+    .reduce(
+      (prev, current) => {
+        prev.push(...current);
+        return prev;
+      },
+      [] as Passport[]
     );
+
+  console.log(`passports retrieved: ${passports.length}`);
 
   const emissionsByCountry = sumByCountry(passports, "co2");
   const treesByCountry = sumByCountry(passports, "trees");
@@ -89,6 +94,11 @@ const getLeaderboard = async () => {
 export const handler = async (event: any = {}) => {
   console.log("launched!");
   web3 = helpers.extendWeb3(new Web3(web3URL));
-  console.log(JSON.stringify(getLeaderboard(), null, 2));
+  const leaderboard = await getLeaderboard();
+  console.log(JSON.stringify(leaderboard, null, 2));
   return true;
 };
+
+handler({})
+  .then(o => console.log(o))
+  .catch(e => console.error(e));

@@ -8,7 +8,7 @@
     "@types/react": "16.8.23",
     "@types/react-dom": "16.8.4",
     "bootstrap": "^4.3.1",
-    "chart.js": "^2.8.0",
+    "chart.js": "^2.9.4",
     "chartjs-plugin-annotation": "^0.5.7",
     "leap-core": "^0.32.4",
     "numeral": "^2.0.6",
